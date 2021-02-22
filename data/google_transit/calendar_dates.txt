@@ -1,0 +1,4 @@
+service_id,date,exception_type
+WK_merged_113737466,20210531,2
+MT_merged_113737464,20210531,2
+SU_merged_113737468,20210531,1
