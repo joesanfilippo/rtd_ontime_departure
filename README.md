@@ -13,32 +13,32 @@ I would like to investigate whether or not they are still meeting this goal and 
 
 ## Dataset
 ---
-My dataset is pulled from [RTD's Public GTFS-RT (General Transit Feed Specification - Realtime Transit) Feeds](https://www.rtd-denver.com/business-center/open-spacial-data/gtfs-rt). There are 3 feeds in RTD's GTFS-RT data:
-1. **Alerts**: This feed includes alerts about unforseen events like route disruptions and stop closures.
+My dataset is pulled from [RTD's Public GTFS-RT (General Transit Feed Specification - Realtime Transit) feeds](https://www.rtd-denver.com/business-center/open-spacial-data/gtfs-rt). There are 3 feeds in RTD's GTFS-RT data:
+1. **Alerts**: This feed includes alerts about unforeseen events like route disruptions and stop closures.
 2. **Trips**: This feed includes trip progress and arrival/departure predictions including delays, cancellations, or changed routes.
-3. **Vehicle Position**: This feed includes vehicle locations, upcoming stop, and can include optional data like congestion level of the vehicle.
+3. **Vehicle Position**: This feed includes vehicle locations, the upcoming stop, and can include optional data like congestion level (occupancy) of the vehicle.
 
-GTFS-RT is documented on [Google's devlopers page](https://developers.google.com/transit/gtfs-realtime/) and outlines the data format and structure as well as how they use GTFS realtime in Google Maps.
+GTFS-RT is documented on [Google's developers page](https://developers.google.com/transit/gtfs-realtime/) and outlines the data format and structure as well as how they use GTFS realtime in Google Maps.
 
 When you make a call to a GTFS-RT feed, you will get two main packets of information: the header and entity. The header includes data about the feed (gtfs_realtime_version, incrementality, and timestamp) and the entity will include data specific to the feed (alerts, trips, or vehicle positions). I decided to use the Vehicle Positions feed since it would give me the most accurate data for where a vehicle is currently located and when they have arrived/departed from a stop. The data I pulled from the Vehicle Positions feed include:
 
-| Variable name         | Data type | Description                                                                                                                                   |
-|-----------------------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| entity_id             | String    | Unique identifier for the row, consists of vehicle_label and timestamp.                                                                       |
-| trip_id               | Integer   | Unique indentifier for a vehicle and route.                                                                                                   | 
-| schedule_relationship | Integer   | The relationship between the trip and the static schedule. Can be one of: SCHEDULED=0, ADDED=1, CANCELED=2 in integer form.                   | 
-| route_id              | String    | The unique identifier for a route usually displayed on the vehicle for identification. Examples include 15, 15L, FF1, 104L, Anschutz Shuttle. | 
-| direction_id          | Integer   | Either a 1 or 0. Indicates the direction of travel for the route. (Southbound, Westbound, Northbound, etc.)                                   | 
-| vehicle_lat           | Float     | The vehicle's current Degrees North in the WGS-84 coordinate system.                                                                          | 
-| vehicle_lng           | Float     | The vehicle's current Degrees East in the WGS-84 coordinate system.                                                                           | 
-| bearing               | Integer   | Bearing, in degrees, clockwise from True North, i.e., 0 is North and 90 is East.                                                              | 
-| current_status        | Integer   | Either a 0,1, or 2 indicating the vehicle's current status in relation to the upcoming stop. INCOMING_AT=0, STOPPED_AT=1, IN_TRANSIT_TO=2     | 
-| timestamp             | DateTime  | The date time at which the vehicle's real-time progress was measured.                                                                         | 
-| stop_id               | Integer   | Unique identifier of the stop according to the route_id and trip_id.                                                                          | 
-| vehicle_id            | String    | Unique identifier of the vehicle in string form. Either a 4 digit string or a 32 character string.                                            | 
-| vehicle_label         | Integer   | Unique identifier of the vehicle in integer form.                                                                                             | 
+| Variable name         | Data type     | Description                                                                                                                                   |
+|-----------------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| entity_id             | String        | Unique identifier for the row, consists of vehicle_label and timestamp.                                                                       |
+| trip_id               | Integer       | Unique indentifier for a vehicle and route.                                                                                                   | 
+| schedule_relationship | Integer       | The relationship between the trip and the static schedule. Can be one of: SCHEDULED=0, ADDED=1, CANCELED=2 in integer form.                   | 
+| route_id              | String        | The unique identifier for a route usually displayed on the vehicle for identification. Examples include 15, 15L, FF1, 104L, Anschutz Shuttle. | 
+| direction_id          | Integer       | Either a 1 or 0. Indicates the direction of travel for the route. (Southbound, Westbound, Northbound, etc.)                                   | 
+| vehicle_lat           | Float         | The vehicle's current Degrees North in the WGS-84 coordinate system.                                                                          | 
+| vehicle_lng           | Float         | The vehicle's current Degrees East in the WGS-84 coordinate system.                                                                           | 
+| bearing               | Integer       | Bearing, in degrees, clockwise from True North, i.e., 0 is North and 90 is East.                                                              | 
+| current_status        | Integer       | Either a 0,1, or 2 indicating the vehicle's current status in relation to the upcoming stop. INCOMING_AT=0, STOPPED_AT=1, IN_TRANSIT_TO=2     | 
+| timestamp             | DateTime      | The date time at which the vehicle's real-time progress was measured.                                                                         | 
+| stop_id               | Integer       | Unique identifier of the stop according to the route_id and trip_id.                                                                          | 
+| vehicle_id            | String        | Unique identifier of the vehicle in string form. Either a 4 digit string or a 32 character string.                                            | 
+| vehicle_label         | Integer       | Unique identifier of the vehicle in integer form.                                                                                             | 
 
-In order to make sure I was capturing enough data to see if a vehicle had made it to it's stop on time without overtaxing RTD's system, I polled the Vehicle Position feed every minute from February 16th, 2020 to February 22nd, 2020. Since I only wanted vehicles that were on a trip (and not vehicles that were out of service or on their way back to RTD facilities) I limited my pull to only entities that where on a trip using `entity.vehicle.HasField('trip')`. I stored the results into a CSV file for later data analysis.
+In order to make sure I was capturing enough data to see if a vehicle had made it to a stop on time without overtaxing RTD's system, I polled the Vehicle Position feed every minute from February 16th, 2020 to February 22nd, 2020. Since I only wanted vehicles that were on a trip (and not vehicles that were out of service or on their way back to RTD facilities) I limited my pull to only entities that were on a trip using `entity.vehicle.HasField('trip')`. I stored the results into a CSV file for later data analysis.
 
 ### GTFS Data
 
@@ -46,61 +46,61 @@ In addition to realtime data feeds, RTD also has GTFS files that include additio
 
 1. **Trips**: Includes additional information about a specific trip, stored in a text file with comma delimeters for the following columns:
 
-| Variable name | Data type | Description                                                                                                                                                          |
-|---------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| block_id      | String    |                                                                                                                                                                      |
-| route_id      | String    | Corresponds to the Route ID in the main dataset                                                                                                                      |
-| direction_id  | Integer   | Corresponds to the Direction ID in the main dataset                                                                                                                  |
-| trip_headsign | String    | User friendly indicator of which direction the vehicle is travelling, usually displayed at the front of the vehicle. Either the start point or end point of a route. |
-| shape_id      | Integer   |                                                                                                                                                                      |
-| service_id    | String    |                                                                                                                                                                      |
-| trip_id       | Integer   | **Primary key to join to the main dataset**                                                                                                                          |
+| Variable name     | Data type     | Description                                                                                                                                                          |
+|-------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block_id          | String        |                                                                                                                                                                      |
+| route_id          | String        | Corresponds to the Route ID in the main dataset                                                                                                                      |
+| direction_id      | Integer       | Corresponds to the Direction ID in the main dataset                                                                                                                  |
+| trip_headsign     | String        | User friendly indicator of which direction the vehicle is travelling, usually displayed at the front of the vehicle. Either the start point or end point of a route. |
+| shape_id          | Integer       |                                                                                                                                                                      |
+| service_id        | String        |                                                                                                                                                                      |
+| trip_id           | Integer       | **Primary key to join to the main dataset**                                                                                                                          |
 
 2. **Routes**: Includes additional information about a specific route, stored in a text file with comma delimeters for the following columns:
 
-| Variable name    | Data type | Description                                                                            |
-|------------------|-----------|----------------------------------------------------------------------------------------|
-| route_long_name  | String    | The starting stops and ending stops of the route.                                      |
-| route_short_name | String    | Same as route_id.                                                                      |
-| route_type       | Integer   | The vehicle mode, LIGHT_RAIL=0, COMMUTER_RAIL=2, BUS=3.                                |
-| route_text_color | String    | Hexadecimal color code of the route name and text.                                     |
-| route_color      | String    | Hexadecimal color code of the route line.                                              |
-| agency_id        | String    | What agency the route belongs to, in my case this will be RTD.                         |
-| route_id         | String    | **Primary key to join to the main dataset**                                            |
-| route_url        | String    | URL to lookup the route on RTD's website.                                              |
-| route_desc       | String    | Which directions the route travels. (Eastbound & Westbount or Northbound & Southbound) |
+| Variable name    | Data type      | Description                                                                            |
+|------------------|----------------|----------------------------------------------------------------------------------------|
+| route_long_name  | String         | The starting stops and ending stops of the route.                                      |
+| route_short_name | String         | Same as route_id.                                                                      |
+| route_type       | Integer        | The vehicle mode, LIGHT_RAIL=0, COMMUTER_RAIL=2, BUS=3.                                |
+| route_text_color | String         | Hexadecimal color code of the route name and text.                                     |
+| route_color      | String         | Hexadecimal color code of the route line.                                              |
+| agency_id        | String         | What agency the route belongs to, in my case this will be RTD.                         |
+| route_id         | String         | **Primary key to join to the main dataset**                                            |
+| route_url        | String         | URL to lookup the route on RTD's website.                                              |
+| route_desc       | String         | Which directions the route travels. (Eastbound & Westbount or Northbound & Southbound) |
 
 3. **Stops**: Includes additional information about a specific stop, stored in a text file with comma delimeters for the following columns:
 
-| Variable name        | Data type | Description                                                                                                                                              |
-|----------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| stop_id              | Integer   | **Primary key to join to the main dataset**                                                                                                              |
-| stop_name            | String    | User friendly name for the stop, usually consisting of cross-streets adjacent to that stop.                                                              |
-| stop_desc            | String    | Indicates which direction vehicles are travelling when approaching the stop.                                                                             |
-| stop_code            | Integer   |                                                                                                                                                          |
-| zone_id              | Integer   |                                                                                                                                                          |
-| location_type        | Integer   | Either a 0 or 1. 0=Stop or Platform where passengers board or disembark from a transit vehicle. 1=Station which can contain one or more stops/platforms. |
-| stop_lat             | Float     | The stop's Degrees North in the WGS-84 coordinate.                                                                                                       |
-| stop_lon             | Float     | The stop's Degrees East in the WGS-84 coordinate.                                                                                                        |
-| stop_timezone        | String    |                                                                                                                                                          |
-| stop_url             | String    | URL to lookup the route on RTD's website.                                                                                                                |
-| parent_station       | Integer   | stop_id of the parent location if location_type = 0 and a parent station exists.                                                                         |
-| wheelchair_boarding  | Integer   | Either a 0 or 1. 0=No accessibility information for the stop. 1=Some vehicles at this stop can be boarded by a rider in a wheelchair.                    |
+| Variable name        | Data type  | Description                                                                                                                                              |
+|----------------------|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| stop_id              | Integer    | **Primary key to join to the main dataset**                                                                                                              |
+| stop_name            | String     | User friendly name for the stop, usually consisting of cross-streets adjacent to that stop.                                                              |
+| stop_desc            | String     | Indicates which direction vehicles are travelling when approaching the stop.                                                                             |
+| stop_code            | Integer    |                                                                                                                                                          |
+| zone_id              | Integer    |                                                                                                                                                          |
+| location_type        | Integer    | Either a 0 or 1. 0=Stop or Platform where passengers board or disembark from a transit vehicle. 1=Station which can contain one or more stops/platforms. |
+| stop_lat             | Float      | The stop's Degrees North in the WGS-84 coordinate.                                                                                                       |
+| stop_lon             | Float      | The stop's Degrees East in the WGS-84 coordinate.                                                                                                        |
+| stop_timezone        | String     |                                                                                                                                                          |
+| stop_url             | String     | URL to lookup the route on RTD's website.                                                                                                                |
+| parent_station       | Integer    | stop_id of the parent location if location_type = 0 and a parent station exists.                                                                         |
+| wheelchair_boarding  | Integer    | Either a 0 or 1. 0=No accessibility information for the stop. 1=Some vehicles at this stop can be boarded by a rider in a wheelchair.                    |
 
 4. **Stop Times**: Includes additional information about a specific stop for a specific trip, stored in a text file with comma delimeters for the following columns:
 
-| Variable name       | Data type | Description                                                                                                                                                                                                  |
-|---------------------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| trip_id             | Integer   | **Primary key combined with stop_id to join to the main dataset**                                                                                                                                            |
-| arrival_time        | String    | Time in format %h:%m:%s of the scheduled arrival for that stop and trip.                                                                                                                                     |
-| departure_time      | String    | Time in format %h:%m:%s of the scheduled departure for that stop and trip.                                                                                                                                   |
-| stop_id             | Integer   | **Primary key combined with trip_id to join to the main dataset**                                                                                                                                            |
-| stop_sequence       | Integer   | What number the stop is of all the trip's stops.                                                                                                                                                             |
-| stop_headsign       | String    | Corresponds to the trip headsign or end stop of the trip.                                                                                                                                                    |
-| pickup_type         | Integer   | Indicates the pickup method. In my case all trips will be 0 or empty indicating a regularly scheduled pickup.                                                                                                |
-| drop_off_type       | Integer   | Indicates the drop_off method. In my case all trips will be 0 or empty indicating a regularly scheduled dropoff.                                                                                             |
-| shape_dist_traveled | String    | Actual distrance traveled along the associated shape. This can be used by apps to show how far a vehicle has traveled along their route.                                                                     |
-| timepoint           | String    | Either a 0 or 1. Indicates if arrival and departure times for a stop are strickly adhered to by the vehicle or if they are approximations. In my case, all trips will be 0=Times are considered approximate. |
+| Variable name       | Data type   | Description                                                                                                                                                                                                  |
+|---------------------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| trip_id             | Integer     | **Primary key combined with stop_id to join to the main dataset**                                                                                                                                            |
+| arrival_time        | String      | Time in format %h:%m:%s of the scheduled arrival for that stop and trip.                                                                                                                                     |
+| departure_time      | String      | Time in format %h:%m:%s of the scheduled departure for that stop and trip.                                                                                                                                   |
+| stop_id             | Integer     | **Primary key combined with trip_id to join to the main dataset**                                                                                                                                            |
+| stop_sequence       | Integer     | What number the stop is of all the trip's stops.                                                                                                                                                             |
+| stop_headsign       | String      | Corresponds to the trip headsign or end stop of the trip.                                                                                                                                                    |
+| pickup_type         | Integer     | Indicates the pickup method. In my case all trips will be 0 or empty indicating a regularly scheduled pickup.                                                                                                |
+| drop_off_type       | Integer     | Indicates the drop_off method. In my case all trips will be 0 or empty indicating a regularly scheduled dropoff.                                                                                             |
+| shape_dist_traveled | String      | Actual distrance traveled along the associated shape. This can be used by apps to show how far a vehicle has traveled along their route.                                                                     |
+| timepoint           | String      | Either a 0 or 1. Indicates if arrival and departure times for a stop are strickly adhered to by the vehicle or if they are approximations. In my case, all trips will be 0=Times are considered approximate. |
 
 ### Data Cleaning
 
@@ -133,9 +133,14 @@ Once I had my data down to just rows where a vehicle was at or immediately arriv
 * Calculating the time in minutes between the arrival/departure timestamp and the scheduled arrival/departure times
 * Calculating the distance in meters between the arrival/departure lat/lng and the next stop's lat/lng
 
-During the process of cleaning the data, I noticed that several days were missing entirely (from 2021-02-19 19:45 to 2021-02-22 07:55). This appears to have been caused by renaming my repository from **Capstone_1** to **rtd_on_time_departure**. The name change had several downstream impacts, most significantly on the crontab job I had running where the directory name was no long found. While this is unfortunate, it will not severly impact my overall analysis.
+During the process of cleaning the data, I noticed that several days were missing entirely (from 2021-02-19 19:45 to 2021-02-22 07:55). This appears to have been caused by renaming my repository from **Capstone_1** to **rtd_on_time_departure**. The name change had several downstream impacts, most significantly on the crontab job I had running where the directory name was no longer found. While this is unfortunate, it will not severely impact my overall analysis.
 
 ## EDA
+
+Now that I have my data in a workable state, I wanted to visualize the entire dataset to see the range of values I would be working with. 
+
+### Secondary Cleaning
+My first visualization was 
 
 ## Conclusions
 
