@@ -139,8 +139,22 @@ During the process of cleaning the data, I noticed that several days were missin
 
 Now that I have my data in a workable state, I wanted to visualize the entire dataset to see the range of values I would be working with. 
 
-### Secondary Cleaning
-My first visualization was 
+### Vehicle Lat / Lngs
+First, I started with all the vehicle lat/lng positions included in my cleaned dataset. If all the lat/lng positions are correct, they should fall well within the boundaries of [RTD's service area](https://gis-rtd-denver.opendata.arcgis.com/app/213a8d61194647ecb22bb5eb26accb8b). Using folium, I plotted the `vehicle_lat | vehicle_lng` points into a heatmap:
+
+#### Vehicle Positions (World Zoom)
+![What about that little guy?](images/vehicle_positions_world.png)
+You can see from this image that there is a concentration of lat/lng points at (0,0) or [Null Island](https://en.wikipedia.org/wiki/Null_Island). GPS data is not perfect and oftentimes if there is an error logging at position it will report as (0,0). While the probability that RTD has a vehicle on Null Island is small, but never zero, I decided to remove these from my dataset.
+
+#### Vehicle Positions (Colorado Zoom)
+![That little guy?](images/vehicle_positions_colorado.png)
+Next I zoomed in closer to the mass of points in Colorado and noticed that there is also a concentration of points to the southeast of Pueblo, close to La Junta, CO. These fall well outside of RTD's service area so I again decided to remove these by filtering out any points with a longitude >=  -104.8, well south of RTD's southern limit.
+
+#### Vehicle Positions (Denver Zoom)
+![I wouldn't worry about that little guy](images/vehicle_positions_denver.png)
+Lastly, I zoomed in on Denver to see if there were any other outliers that didn't fit within my dataset. There was a cluster of points that looked to be a vehicle traveling along Boulder Canyon Dr (Hwy 119) between Boulder and Nederland. I initially assumed this was a vehicle that got lost but forgot to turn off their GPS transponder. Upon futher inspection though, this appears to be RTD's [NB route](https://www.rtd-denver.com/app/route/NB/schedule) which services Eldora Mountain Resort on Monday - Friday so there's no need to remove it from my dataset.
+
+
 
 ## Conclusions
 
