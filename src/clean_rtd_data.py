@@ -1,26 +1,33 @@
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-plt.style.use('ggplot')
-font = {'weight': 'bold','size':   16}
-plt.rc('font', **font)
-import geopy.distance as geo
 import re
 import os
-import boto3
 import io
+import boto3
+import numpy as np
+import pandas as pd
+import geopy.distance as geo
 
 class RTD_df(object):
 
-    def __init__(self, df):
+    def __init__(self, bucket_name, file_name):
         '''
-        Initialize instance of a DataFrame with RTD info:
+        Initialize instance of a RTD_df class with the AWS bucket and filename:
 
         Args: 
-            df (pd.DataFrame): A pandas DataFrame with RTD info in it.
+            bucket_name (string): The name of an AWS bucket with the csv datafile in it.
+            file_name (string): A csv filename where the RTD data is stored.
         '''
-        self.df = df
+        self.bucket_name = bucket_name
+        self.file_name = file_name
 
+        aws_id = os.environ['AWS_ACCESS_KEY_ID']
+        aws_secret = os.environ['AWS_SECRET_ACCESS_KEY']
+        client = boto3.client('s3'
+                             ,aws_access_key_id=aws_id
+                             ,aws_secret_access_key=aws_secret)
+
+        csv_obj = client.get_object(Bucket=self.bucket_name, Key=self.file_name)
+        self.df = pd.read_csv(io.BytesIO(csv_obj['Body'].read()), encoding='utf8')
+        
     def convert_timezone_local(self, colname_list, current_timezone, local_timezone): 
         '''
         Converts the columns in colname_list to local timezone
@@ -122,110 +129,104 @@ class RTD_df(object):
         
         self.df[new_column] = [round(geo.distance(point_1, point_2).m,2) if (~pd.isnull(point_2[0])) & (point_1[0] > 0) else np.nan for point_1, point_2 in zip(point_1, point_2)]
 
+    def clean_my_data(self):
+        # Remove any NaNs from the timestamp field
+        self.df = self.df[(~self.df.timestamp.isnull())]
+
+        # Convert the timezone to local time
+        self.convert_timezone_local(['timestamp'], 'UTC', 'US/Mountain')
+        
+        # Shift the time, lat/lng, and stop columns to get departure data 
+        self.shift_departures(sorted_columns = ['vehicle_id', 'timestamp']
+                        ,grouped_columns = ['trip_id', 'vehicle_label']
+                        ,shifted_columns = ['timestamp', 'vehicle_lat', 'vehicle_lng', 'stop_id']
+                        ,new_column_names = ['departure_timestamp', 'departure_vehicle_lat', 'departure_vehicle_lng', 'next_stop_id'])
+
+        # Remove NaNs from stop_id and any rows where arrival stop == departure stop (meaning we are not at 
+        # stop yet, but in transit to a stop)
+        self.df = self.df[~(self.df.stop_id == self.df.next_stop_id)]
+        self.df = self.df[~self.df.next_stop_id.isnull()]
+
+        # Join the GTFS files for routes, trips, stops, and stop times
+        self.join_txt_file('~/Documents/dsi/repos/rtd_ontime_departure/data/google_transit/routes.txt', 'left', ['route_id'])
+        self.join_txt_file('~/Documents/dsi/repos/rtd_ontime_departure/data/google_transit/trips.txt', 'left', ['trip_id'])
+        self.join_txt_file('~/Documents/dsi/repos/rtd_ontime_departure/data/google_transit/stops.txt', 'left', ['stop_id'])
+        self.join_txt_file('~/Documents/dsi/repos/rtd_ontime_departure/data/google_transit/stop_times.txt', 'left', ['trip_id', 'stop_id'])
+
+        # Remove NaNs from stop names because the stop.txt file is not 100% up to date
+        # Remove any vehicle lat that <= 0.0 and any vehicle lng that is >= -104.8 (outside of RTD's service area)
+        self.df = self.df[~(self.df.stop_name.isnull()) & (self.df.vehicle_lat > 0.0) & (self.df.vehicle_lng < -104.8)]
+
+        # Select just the column names we want to use going forward.
+        self.df = self.df.loc[:,['entity_id'
+                    ,'vehicle_id'
+                    ,'vehicle_label'
+                    ,'trip_id'
+                    ,'trip_headsign'
+                    ,'route_id'
+                    ,'route_type'
+                    ,'route_long_name'
+                    ,'route_short_name'
+                    ,'route_desc'
+                    ,'current_status'
+                    ,'stop_id'
+                    ,'stop_name'
+                    ,'stop_desc'
+                    ,'vehicle_lat'
+                    ,'vehicle_lng'
+                    ,'stop_lat'
+                    ,'stop_lon'
+                    ,'departure_vehicle_lat'
+                    ,'departure_vehicle_lng'
+                    ,'timestamp'
+                    ,'arrival_time'
+                    ,'departure_timestamp'
+                    ,'departure_time']]
+
+        # Convert the current_status and route_type values to their real-world counterparts
+        status_dict = {0: 'incoming_at'
+                    ,1: 'stopped_at'
+                    ,2: 'in_transit_to'}
+        route_dict = {0: 'light_rail'
+                    ,2: 'commuter_rail'
+                    ,3: 'bus'}
+        self.parse_codes('current_status', status_dict)
+        self.parse_codes('route_type', route_dict)
+
+        # Rename the arrival columns to help differentiate them from departure columns
+        self.df.rename({'timestamp': 'arrival_timestamp'
+                ,'arrival_time': 'scheduled_arrival_time'
+                ,'departure_time': 'scheduled_departure_time'
+                ,'vehicle_lat': 'arrival_vehicle_lat'
+                ,'vehicle_lng': 'arrival_vehicle_lng'
+                ,'stop_lon': 'stop_lng'}, axis=1, inplace=True)
+        
+        # Remove any NaNs from departure times, or scheduled arrival/departure times
+        self.df = self.df[(~self.df.departure_timestamp.isnull())
+                        & (~self.df.scheduled_arrival_time.isnull()) 
+                        & (~self.df.scheduled_departure_time.isnull())
+                    ]
+
+        # Fix errors in stop_times.txt where the scheduled arrival or departure time could have 24 or 25 in the hour spot
+        self.df = self.df.replace({'scheduled_arrival_time': {r'^24':'00'
+                                                             ,r'^25':'00'}
+                                  ,'scheduled_departure_time': {r'^24':'00'
+                                                               ,r'^25':'00'}
+                                  }, regex=True)
+
+        # Calcuate the time between the arrival/departure timestamp and when the scheduled arrival/departure time was supposed to be
+        self.calculate_time('arrival_timestamp', 'scheduled_arrival_time', 'minutes_to_arrival')
+        self.calculate_time('departure_timestamp', 'scheduled_departure_time', 'minutes_since_departure')
+
+        # Calculate the distance between the arrival/departure location and where the scheduled stop is located
+        self.calculate_distance('arrival_vehicle_lat', 'arrival_vehicle_lng', 'stop_lat', 'stop_lng', 'meters_to_arrival')
+        self.calculate_distance('departure_vehicle_lat', 'departure_vehicle_lng', 'stop_lat', 'stop_lng', 'meters_since_departure')
+
 if __name__ == '__main__':
 
-    # Load the rtd_data.csv in from AWS S3 Bucket
-    aws_id = os.environ['AWS_ACCESS_KEY_ID']
-    aws_secret = os.environ['AWS_SECRET_ACCESS_KEY']
-    client = boto3.client('s3'
-                        ,aws_access_key_id=aws_id
-                        ,aws_secret_access_key=aws_secret)
-    bucket_name = 'rtd-on-time-departure'
-    object_key = 'rtd_data.csv'
-    csv_obj = client.get_object(Bucket=bucket_name, Key=object_key)
-    rtd_df = pd.read_csv(io.BytesIO(csv_obj['Body'].read()), encoding='utf8')
+    # Instantiate the RTD_df class
+    rtd_data = RTD_df(bucket_name='rtd-on-time-departure', file_name='rtd_data.csv')
     
-    # Instantiate the RTD_df class with the rtd_df pulled from AWS S3
-    rtd_data = RTD_df(rtd_df)
-    
-    # Remove any NaNs from the timestamp field
-    rtd_data.df = rtd_data.df[(~rtd_data.df.timestamp.isnull())]
+    rtd_data.clean_my_data()
 
-    # Convert the timezone to local time
-    rtd_data.convert_timezone_local(['timestamp'], 'UTC', 'US/Mountain')
-    
-    # Shift the time, lat/lng, and stop columns to get departure data 
-    rtd_data.shift_departures(sorted_columns = ['vehicle_id', 'timestamp']
-                             ,grouped_columns = ['trip_id', 'vehicle_label']
-                             ,shifted_columns = ['timestamp', 'vehicle_lat', 'vehicle_lng', 'stop_id']
-                             ,new_column_names = ['departure_timestamp', 'departure_vehicle_lat', 'departure_vehicle_lng', 'next_stop_id'])
-
-    # Remove NaNs from stop_id and any rows where arrival stop == departure stop (meaning we are not at 
-    # stop yet, but in transit to a stop)
-    rtd_data.df = rtd_data.df[~(rtd_data.df.stop_id == rtd_data.df.next_stop_id)]
-    rtd_data.df = rtd_data.df[~rtd_data.df.next_stop_id.isnull()]
-
-    # Join the GTFS files for routes, trips, stops, and stop times
-    rtd_data.join_txt_file('~/Documents/dsi/repos/rtd_ontime_departure/data/google_transit/routes.txt', 'left', ['route_id'])
-    rtd_data.join_txt_file('~/Documents/dsi/repos/rtd_ontime_departure/data/google_transit/trips.txt', 'left', ['trip_id'])
-    rtd_data.join_txt_file('~/Documents/dsi/repos/rtd_ontime_departure/data/google_transit/stops.txt', 'left', ['stop_id'])
-    rtd_data.join_txt_file('~/Documents/dsi/repos/rtd_ontime_departure/data/google_transit/stop_times.txt', 'left', ['trip_id', 'stop_id'])
-
-    # Remove NaNs from stop names because the stop.txt file is not 100% up to date
-    # Remove any vehicle lat that <= 0.0 and any vehicle lng that is >= -104.8 (outside of RTD's service area)
-    rtd_data.df = rtd_data.df[~(rtd_data.df.stop_name.isnull()) & (rtd_data.df.vehicle_lat > 0.0) & (rtd_data.df.vehicle_lng < -104.8)]
-
-    # Select just the column names we want to use going forward.
-    rtd_data.df = rtd_data.df.loc[:,['entity_id'
-                  ,'vehicle_id'
-                  ,'vehicle_label'
-                  ,'trip_id'
-                  ,'trip_headsign'
-                  ,'route_id'
-                  ,'route_type'
-                  ,'route_long_name'
-                  ,'route_short_name'
-                  ,'route_desc'
-                  ,'current_status'
-                  ,'stop_id'
-                  ,'stop_name'
-                  ,'stop_desc'
-                  ,'vehicle_lat'
-                  ,'vehicle_lng'
-                  ,'stop_lat'
-                  ,'stop_lon'
-                  ,'departure_vehicle_lat'
-                  ,'departure_vehicle_lng'
-                  ,'timestamp'
-                  ,'arrival_time'
-                  ,'departure_timestamp'
-                  ,'departure_time']]
-
-    # Convert the current_status and route_type values to their real-world counterparts
-    status_dict = {0: 'incoming_at'
-                  ,1: 'stopped_at'
-                  ,2: 'in_transit_to'}
-    route_dict = {0: 'light_rail'
-                 ,2: 'commuter_rail'
-                 ,3: 'bus'}
-    rtd_data.parse_codes('current_status', status_dict)
-    rtd_data.parse_codes('route_type', route_dict)
-
-    # Rename the arrival columns to help differentiate them from departure columns
-    rtd_data.df.rename({'timestamp': 'arrival_timestamp'
-              ,'arrival_time': 'scheduled_arrival_time'
-              ,'departure_time': 'scheduled_departure_time'
-              ,'vehicle_lat': 'arrival_vehicle_lat'
-              ,'vehicle_lng': 'arrival_vehicle_lng'
-              ,'stop_lon': 'stop_lng'}, axis=1, inplace=True)
-    
-    # Remove any NaNs from departure times, or scheduled arrival/departure times
-    rtd_data.df = rtd_data.df[(~rtd_data.df.departure_timestamp.isnull())
-                            & (~rtd_data.df.scheduled_arrival_time.isnull()) 
-                            & (~rtd_data.df.scheduled_departure_time.isnull())
-                            ]
-
-    # Fix errors in stop_times.txt where the scheduled arrival or departure time could have 24 or 25 in the hour spot
-    rtd_data.df = rtd_data.df.replace({'scheduled_arrival_time': {r'^24':'00'
-                                                                 ,r'^25':'00'}
-                                      ,'scheduled_departure_time': {r'^24':'00'
-                                                                   ,r'^25':'00'}
-                                      }, regex=True)
-
-    # Calcuate the time between the arrival/departure timestamp and when the scheduled arrival/departure time was supposed to be
-    rtd_data.calculate_time('arrival_timestamp', 'scheduled_arrival_time', 'minutes_to_arrival')
-    rtd_data.calculate_time('departure_timestamp', 'scheduled_departure_time', 'minutes_since_departure')
-
-    # Calculate the distance between the arrival/departure location and where the scheduled stop is located
-    rtd_data.calculate_distance('arrival_vehicle_lat', 'arrival_vehicle_lng', 'stop_lat', 'stop_lng', 'meters_to_arrival')
-    rtd_data.calculate_distance('departure_vehicle_lat', 'departure_vehicle_lng', 'stop_lat', 'stop_lng', 'meters_since_departure')
+    print(rtd_data.df.shape)

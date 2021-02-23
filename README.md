@@ -154,7 +154,11 @@ Next I zoomed in closer to the mass of points in Colorado and noticed that there
 ![I wouldn't worry about that little guy](images/vehicle_positions_denver.png)
 Lastly, I zoomed in on Denver to see if there were any other outliers that didn't fit within my dataset. There was a cluster of points that looked to be a vehicle traveling along Boulder Canyon Dr (Hwy 119) between Boulder and Nederland. I initially assumed this was a vehicle that got lost but forgot to turn off their GPS transponder. Upon futher inspection though, this appears to be RTD's [NB route](https://www.rtd-denver.com/app/route/NB/schedule) which services Eldora Mountain Resort on Monday - Friday so there's no need to remove it from my dataset.
 
+Next, I wanted to see what sort of range in departure_times I would be dealing with. In this case, a negative value means the vehicle left before the scheduled departure time and a positive value means it left after the scheduled departure time. I used a histogram to plot the distrubutions for all the stops:
 
+![Departure Time Histogram](images/departure_time_histogram.png)
+
+It looks like 99.5% of my data falls within (-20, 20) minutes so I zoomed in there to get a better idea of the distribution. There is definitely a normal distribution here with a slight left skew as vehicles are more often slightly late than slightly early. 
 
 ## Conclusions
 
