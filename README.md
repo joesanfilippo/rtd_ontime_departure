@@ -25,7 +25,7 @@ When you make a call to a GTFS-RT feed, you will get two main packets of informa
 | Variable name         | Data type     | Description                                                                                                                                   |
 |-----------------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | entity_id             | String        | Unique identifier for the row, consists of vehicle_label and timestamp.                                                                       |
-| trip_id               | Integer       | Unique identifier for a vehicle and route.                                                                                                   | 
+| trip_id               | Integer       | Unique identifier for a vehicle and route.                                                                                                    | 
 | schedule_relationship | Integer       | The relationship between the trip and the static schedule. Can be one of: SCHEDULED=0, ADDED=1, CANCELED=2 in integer form.                   | 
 | route_id              | String        | The unique identifier for a route usually displayed on the vehicle for identification. Examples include 15, 15L, FF1, 104L, Anschutz Shuttle. | 
 | direction_id          | Integer       | Either a 1 or 0. Indicates the direction of travel for the route. (Southbound, Westbound, Northbound, etc.)                                   | 
@@ -162,11 +162,12 @@ Next, I wanted to see what sort of range in departure_times I would be dealing w
 It looks like 99.5% of my data falls within (-20, 20) minutes so I zoomed in there to get a better idea of the distribution. There is definitely a normal distribution here with a slight left skew as vehicles are more often slightly late than slightly early. Overall though, this gives me a good idea of where my departure times will fall for the dataset.
 
 ### Null Hypotheses
-If we use the 2019Q3 goal (86% Total, 86% Bus, 90% Light Rail) for our Null Hypothesis, we can see that COVID-19 and the RTD driver shortage of 2020 had significant impacts to the on-time departure rate. The P Value for each of our route types is below our stated $\alpha = 0.01$, which means we can reject the Null Hypothesis that RTD's on-time departure rate during the measure time period was not 86% or greater.
+If we use the 2019Q3 goals (86% System, 90% Light Rail, 86% Bus) for our Null Hypothesis, we can see that COVID-19 and the RTD driver shortage of 2020 had significant impacts to the on-time departure rate. The p-value for each of our route types is below our stated $\alpha = 0.01$, which means we can **reject the Null Hypothesis that RTD's on-time departure rate during the measured time period was 86% or greater**.
 
 ![Null Hypothesis](images/original_null_hypothesis.png)
 
 ### Alternate Hypothesis
+For each of our experiments, you can see that the alternate hypothesis distribution is well below the critical value ($\large \alpha \large$=0.01) which results in a very little chance of Type I or Type II Errors. 
 
 ![Alternate Hypothesis](images/original_alt_hypothesis.png)
 
