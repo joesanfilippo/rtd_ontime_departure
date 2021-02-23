@@ -25,7 +25,7 @@ When you make a call to a GTFS-RT feed, you will get two main packets of informa
 | Variable name         | Data type     | Description                                                                                                                                   |
 |-----------------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | entity_id             | String        | Unique identifier for the row, consists of vehicle_label and timestamp.                                                                       |
-| trip_id               | Integer       | Unique indentifier for a vehicle and route.                                                                                                   | 
+| trip_id               | Integer       | Unique identifier for a vehicle and route.                                                                                                   | 
 | schedule_relationship | Integer       | The relationship between the trip and the static schedule. Can be one of: SCHEDULED=0, ADDED=1, CANCELED=2 in integer form.                   | 
 | route_id              | String        | The unique identifier for a route usually displayed on the vehicle for identification. Examples include 15, 15L, FF1, 104L, Anschutz Shuttle. | 
 | direction_id          | Integer       | Either a 1 or 0. Indicates the direction of travel for the route. (Southbound, Westbound, Northbound, etc.)                                   | 
@@ -44,7 +44,7 @@ In order to make sure I was capturing enough data to see if a vehicle had made i
 
 In addition to realtime data feeds, RTD also has GTFS files that include additional static data to complement the realtime feeds. The GTFS data I included are:
 
-1. **Trips**: Includes additional information about a specific trip, stored in a text file with comma delimeters for the following columns:
+1. **Trips**: Includes additional information about a specific trip, stored in a text file with comma delimiters for the following columns:
 
 | Variable name     | Data type     | Description                                                                                                                                                          |
 |-------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -56,7 +56,7 @@ In addition to realtime data feeds, RTD also has GTFS files that include additio
 | service_id        | String        |                                                                                                                                                                      |
 | trip_id           | Integer       | **Primary key to join to the main dataset**                                                                                                                          |
 
-2. **Routes**: Includes additional information about a specific route, stored in a text file with comma delimeters for the following columns:
+2. **Routes**: Includes additional information about a specific route, stored in a text file with comma delimiters for the following columns:
 
 | Variable name    | Data type      | Description                                                                            |
 |------------------|----------------|----------------------------------------------------------------------------------------|
@@ -68,9 +68,9 @@ In addition to realtime data feeds, RTD also has GTFS files that include additio
 | agency_id        | String         | What agency the route belongs to, in my case this will be RTD.                         |
 | route_id         | String         | **Primary key to join to the main dataset**                                            |
 | route_url        | String         | URL to lookup the route on RTD's website.                                              |
-| route_desc       | String         | Which directions the route travels. (Eastbound & Westbount or Northbound & Southbound) |
+| route_desc       | String         | Which directions the route travels. (Eastbound & Westbound or Northbound & Southbound) |
 
-3. **Stops**: Includes additional information about a specific stop, stored in a text file with comma delimeters for the following columns:
+3. **Stops**: Includes additional information about a specific stop, stored in a text file with comma delimiters for the following columns:
 
 | Variable name        | Data type  | Description                                                                                                                                              |
 |----------------------|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -87,7 +87,7 @@ In addition to realtime data feeds, RTD also has GTFS files that include additio
 | parent_station       | Integer    | stop_id of the parent location if location_type = 0 and a parent station exists.                                                                         |
 | wheelchair_boarding  | Integer    | Either a 0 or 1. 0=No accessibility information for the stop. 1=Some vehicles at this stop can be boarded by a rider in a wheelchair.                    |
 
-4. **Stop Times**: Includes additional information about a specific stop for a specific trip, stored in a text file with comma delimeters for the following columns:
+4. **Stop Times**: Includes additional information about a specific stop for a specific trip, stored in a text file with comma delimiters for the following columns:
 
 | Variable name       | Data type   | Description                                                                                                                                                                                                  |
 |---------------------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -99,8 +99,8 @@ In addition to realtime data feeds, RTD also has GTFS files that include additio
 | stop_headsign       | String      | Corresponds to the trip headsign or end stop of the trip.                                                                                                                                                    |
 | pickup_type         | Integer     | Indicates the pickup method. In my case all trips will be 0 or empty indicating a regularly scheduled pickup.                                                                                                |
 | drop_off_type       | Integer     | Indicates the drop_off method. In my case all trips will be 0 or empty indicating a regularly scheduled dropoff.                                                                                             |
-| shape_dist_traveled | String      | Actual distrance traveled along the associated shape. This can be used by apps to show how far a vehicle has traveled along their route.                                                                     |
-| timepoint           | String      | Either a 0 or 1. Indicates if arrival and departure times for a stop are strickly adhered to by the vehicle or if they are approximations. In my case, all trips will be 0=Times are considered approximate. |
+| shape_dist_traveled | String      | Actual distance traveled along the associated shape. This can be used by apps to show how far a vehicle has traveled along their route.                                                                     |
+| timepoint           | String      | Either a 0 or 1. Indicates if arrival and departure times for a stop are strictly adhered to by the vehicle or if they are approximations. In my case, all trips will be 0=Times are considered approximate. |
 
 ### Data Cleaning
 
@@ -152,13 +152,33 @@ Next I zoomed in closer to the mass of points in Colorado and noticed that there
 
 #### Vehicle Positions (Denver Zoom)
 ![I wouldn't worry about that little guy](images/vehicle_positions_denver.png)
-Lastly, I zoomed in on Denver to see if there were any other outliers that didn't fit within my dataset. There was a cluster of points that looked to be a vehicle traveling along Boulder Canyon Dr (Hwy 119) between Boulder and Nederland. I initially assumed this was a vehicle that got lost but forgot to turn off their GPS transponder. Upon futher inspection though, this appears to be RTD's [NB route](https://www.rtd-denver.com/app/route/NB/schedule) which services Eldora Mountain Resort on Monday - Friday so there's no need to remove it from my dataset.
+Lastly, I zoomed in on Denver to see if there were any other outliers that didn't fit within my dataset. There was a cluster of points that looked to be a vehicle traveling along Boulder Canyon Dr (Hwy 119) between Boulder and Nederland. I initially assumed this was a vehicle that got lost but forgot to turn off their GPS transponder. Upon further inspection though, this appears to be RTD's [NB route](https://www.rtd-denver.com/app/route/NB/schedule) which services Eldora Mountain Resort on Monday - Friday so there's no need to remove it from my dataset.
 
-Next, I wanted to see what sort of range in departure_times I would be dealing with. In this case, a negative value means the vehicle left before the scheduled departure time and a positive value means it left after the scheduled departure time. I used a histogram to plot the distrubutions for all the stops:
+Next, I wanted to see what sort of range in departure_times I would be dealing with. In this case, a negative value means the vehicle left before the scheduled departure time and a positive value means it left after the scheduled departure time. I used a histogram to plot the distributions for all the stops:
 
+### Distribution of Departure Times
 ![Departure Time Histogram](images/departure_time_histogram.png)
 
-It looks like 99.5% of my data falls within (-20, 20) minutes so I zoomed in there to get a better idea of the distribution. There is definitely a normal distribution here with a slight left skew as vehicles are more often slightly late than slightly early. 
+It looks like 99.5% of my data falls within (-20, 20) minutes so I zoomed in there to get a better idea of the distribution. There is definitely a normal distribution here with a slight left skew as vehicles are more often slightly late than slightly early. Overall though, this gives me a good idea of where my departure times will fall for the dataset.
+
+### Null Hypotheses
+If we use the 2019Q3 goal (86% Total, 86% Bus, 90% Light Rail) for our Null Hypothesis, we can see that COVID-19 and the RTD driver shortage of 2020 had significant impacts to the on-time departure rate. The P Value for each of our route types is below our stated $\alpha = 0.01$, which means we can reject the Null Hypothesis that RTD's on-time departure rate during the measure time period was not 86% or greater.
+
+![Null Hypothesis](images/original_null_hypothesis.png)
+
+### Alternate Hypothesis
+
+![Alternate Hypothesis](images/original_alt_hypothesis.png)
+
+
+### Modified Null Hypotheses
+
+![Modified Null Hypothesis](images/modified_null_hypothesis.png)
+
+### Modified Alternate Hypotheses
+
+![Modified Alternate Hypothesis](images/modified_alt_hypothesis.png)
+
 
 ## Conclusions
 
