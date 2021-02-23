@@ -158,4 +158,10 @@ Lastly, I zoomed in on Denver to see if there were any other outliers that didn'
 
 ## Conclusions
 
+### Lessons Learned
+* Make your cron jobs foolproof
+* If you know your dataset is going to be large, store it in an AWS S3 bucket from the beginning
+
+
 ## Future Work
+
