@@ -201,7 +201,7 @@ I also
 ### Lessons Learned
 * Make your cron jobs foolproof
 * If you know your dataset is going to be large, store it in an AWS S3 bucket from the beginning
-
+* It is incredibly annoying to get your plots right when you have a large dataset
 
 ## Future Work
 ---
