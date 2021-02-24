@@ -1,135 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-      crossorigin=""
-    />
-    <script
-      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-      crossorigin=""
-    ></script>
-    <script type="application/javascript" src="../html/All_neighborhood_map.html"></script>
-  </head>
-  <script src="map-manager.js"></script>
-  <body style="max-width: 1080px; margin: auto; font-family: Arial">
-    <h1 style="text-align: center">Who Owns Denver?</h1>
-    <div id="mapid" style="height: 500px"></div>
-    <div style="margin-top: 0.5rem">
-      <label for="minimum-properties">Minimum Number of Properties To Own:</label>
-      <select id="minimumProperties" name="minimum-properties" value="1" onchange="updateMinimum(event.target.value)">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-        <option value="10">10</option>
-        <option value="15">15</option>
-        <option value="20">20</option>
-        <option value="25">25</option>
-      </select>
-    </div>
-    <p style="font-size: 0.75rem">It may take up to a couple of minutes for the map to update after changing this value (there is a lot of data)</p>
-    <main style="padding: 1rem">
-      <div>
-        <h2>What is this?</h2>
-        <p>
-          This is a map of every property that is owned by a landlord. I have
-          defined a landlord as someone who owns more than 1 property or has LLC
-          or Trust in the name of the owner. This map should help illustrate how
-          much property in Denver is owned as "an investment".
-        </p>
-      </div>
-      <div>
-        <h3>How to use</h3>
-        <p>
-          Click on a marker to view the address, owner name, and the other
-          properties that person owns.
-        </p>
-      </div>
-      <div>
-        <h3>How can I verify this information?</h3>
-        <p>
-          All of this information is publicly available and verifiable at
-          <a href="https://www.denvergov.org/property/realproperty/"
-            >https://www.denvergov.org/property/realproperty/</a
-          >
-        </p>
-      </div>
-      <div>
-        <h3>Things of Note</h3>
-        <p>Since this list is compiled by owner, there are owners that some
-          people may not typically consider landlords. Owners like the "CITY &
-          COUNTY OF DENVER" or "SCHOOL DISTRICT NO 1". I left those in the
-          data set because I didn't want to accidentally remove one that
-          sounds like it is a government entity when really it is a private
-          entity.</p>
-      </div>
-      <div>
-        <h3>Current List of Government Owners (marked with red circles)</h3>
-        <ul>
-          <li>
-            CITY & COUNTY OF DENVER
-          </li>
-          <li>
-            UNITED STATES OF AMERICA
-          </li>
-          <li>
-            STATE OF COLORADO
-          </li>
-          <li>
-            DENVER SCHOOL FACILITIES LEASING CORPORATION
-          </li>
-          <li>
-            SCHOOL DISTRICT NO 1
-          </li>
-          <li>
-            HOUSING AUTHORITY OF THE CITY & COUNTY OF DENVER
-          </li>
-        </ul>
-      </div>
-      <div>
-        <h3>Mile High View</h3>
-        <p>
-          02/18/2021: After a first pass it appears that between 25% - 33% of
-          home on any given block in Denver are rentals. Which would mean that 1
-          out of every 3 or 4 Denverites are renters
-        </p>
-      </div>
-      <div>
-        <h3>Why did you make this?</h3>
-        <p>
-          My partner and I are trying to buy a home in Denver. We have been
-          planning and saving for a few years and we recently started actively
-          searching for what we hope to be our forever home. We watched as house
-          after house was purchased significantly above list price and we
-          wondered who could be buying these homes? I was interested in learning
-          how many properties in Denver were owned by people with multiple
-          properties so I figured this would be a neat project. I had an inkling
-          that might be who we would be competing with but I was surprised at
-          how pervasive landlord and investor owned properties are.
-        </p>
-      </div>
-      <div>
-        <h3>How do I contact you? How do I report an issue?</h3>
-        <p>
-          If you find any issues in the data please feel free to create a
-          <a href="https://github.com/vmike245/who-owns-the-homes/issues/new">
-            new issue here.
-          </a>
-          <br />
-          If you would like to get in contact with me, you can reach me at
-          <a href="mailto:whoownsdenver@gmail.com">WhoOwnsDenver@gmail.com</a>
-        </p>
-      </div>
-    </main>
+    <script src="jquery.js"></script> 
+    <script> 
+    $(function(){
+      $("#neighborhood_map").load("../html/All_neighborhood_map.html"); 
+    });
+    </script> 
+  </head> 
+  <body>
+    <div id="neighborhood_map"></div>
   </body>
-  <script src="map-manager.js"></script>
 </html>
