@@ -178,21 +178,23 @@ For each of our experiments, you can also see that the alternate hypothesis dist
 
 
 ### Modified Null Hypotheses
-Since there is such a drastic difference between the 2019Q3 goal and current state, it might be better to estimate what would be a good goal for RTD to set for their routes? We can use the same statistical analysis to see what on-time service % would still be above the current state but within reach for significant improvement. For this experiment, I wanted to solve for a Null Probability given my conditions:
+Since there is such a drastic difference between the 2019Q3 goal and current state, it might be better to estimate what would be a good goal for RTD to set for their routes? We can use the same statistical analysis to see what on-time service % would still be above the current state but within reach for significant improvement. For this experiment, I wanted to solve for a Null probability given my conditions:
 
 $$\large n=\text{Observed number of stops}$$
-$$\large H_A=\text{Observed on-time departure}$$
+$$\large \mu_A=\text{Observed on-time departure rate}$$
 $$\large \alpha=0.003$$
 $$\large \beta=0.20$$
 $$\large Power=0.80$$
 
-Given the above parameters I am able to solve for the difference between the observed on-time departure and the null hypothesis on-time departure. When I did this, I came up with the following 3 values for System wide, Light Rail, and Bus routes:
+Given the above parameters I am able to solve for the difference between the observed on-time departure rate and the null hypothesis on-time departure rate. When I did this, I came up with the following 3 values for System wide, Light Rail, and Bus routes:
 
 $$\large H_{0_{system}}: \text{On Time Service >= 81.29\%}$$ 
 $$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 86.60\%}$$ 
 $$\large H_{0_{\text{bus}}}: \text{On Time Service >= 81.05\%}$$ 
 
-These can be used by RTD to set attainable goals that will have a significant impact on the current state of on-time departures across the system.
+These can be used by RTD to set attainable goals that will have a significant impact on the current state of on-time departures across the system. The difference between $H_0$ and $H_A$ is only a fraction of a percent in most cases, showing how small of a change you need for a significant difference when you have such a large number of observations.
+
+&nbsp;
 
 <!-- ![Modified Null Hypothesis](images/modified_null_hypothesis.png) -->
 
@@ -207,7 +209,8 @@ I also wanted to dive one level deeper to see what the top 10 routes by # of sto
 
 ![Top 10 Routes Alternate Hypothesis](images/top_10_routes_alt_hypothesis.png)
 
-### Map of Stops with on-time %
+### Map of Neighborhoods by On-Time Departure Percent
+Finally, equity plays a large role in making sure that RTD is providing convenient and reliable service across the entire Metro Denver Area. So in order to determine this, I plotted the on-time departure rate across all Denver neighborhoods according to where the stop is located. You can dive into the map at [All Routes Neighborhood Map]('html/All_neighborhood_map.html')
 
 ## Conclusions
 ---
