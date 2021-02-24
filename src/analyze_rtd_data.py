@@ -54,14 +54,19 @@ class RTD_analyze(object):
         self.ontime_departure_rate = self.ontime_stops / self.total_stops
 
     def plot_null_hypothesis(self, ax, alpha_value, null_percent):
-        
+        def thousands(x, pos):
+            'The two args are the value and tick position'
+            return '%3.1f' % (x/1000)
+
+        graph_fontsize = 30
+
         null_dist = stats.binom(n=self.total_stops, p=null_percent)
         x = np.linspace(0, self.total_stops, self.total_stops+1)
         observed_data = self.ontime_stops
         
         ax.plot(x, null_dist.pmf(x), label='$H_O$')
-        ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%1.2e'))
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: format(int(x), ',')))
+        ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%1.1e'))
+        ax.xaxis.set_major_formatter(plt.FuncFormatter(thousands))
         ax.set_xlim(null_dist.ppf(0.00001), null_dist.ppf(0.99999))
         ax.axvline(null_dist.ppf(alpha_value)
                   ,linestyle='--'
@@ -72,11 +77,16 @@ class RTD_analyze(object):
                         ,where= x <= observed_data
                         ,alpha=0.25
                         ,label=f"P Value = {null_dist.cdf(observed_data):.3f}")
-        ax.legend(loc='best')
-        ax.set_xlabel('# of On-Time Vehicles')
-        ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=14)
+        ax.legend(loc='best', fontsize=graph_fontsize-10)
+        ax.set_xlabel('# of On-Time Vehicles (000s)', fontsize=graph_fontsize)
+        ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
 
     def plot_alt_hypothesis(self, ax, alpha_value, null_percent):
+        def thousands(x, pos):
+            'The two args are the value and tick position'
+            return '%3.1f' % (x/1000)
+
+        graph_fontsize = 30
 
         null_dist = stats.binom(n=self.total_stops, p=null_percent)
         alt_dist = stats.binom(n=self.total_stops, p=self.ontime_departure_rate)
@@ -85,8 +95,8 @@ class RTD_analyze(object):
 
         ax.plot(x, null_dist.pmf(x), label='$H_0$')
         ax.plot(x, alt_dist.pmf(x), label='$H_A$')
-        ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%1.2e'))
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: format(int(x), ',')))
+        ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%1.1e'))
+        ax.xaxis.set_major_formatter(plt.FuncFormatter(thousands))
         ax.set_xlim(min(alt_dist.ppf(0.00001), null_dist.ppf(0.00001)), max(alt_dist.ppf(0.99999), null_dist.ppf(0.99999)))
         ax.axvline(null_dist.ppf(alpha_value), linestyle='--', color='grey', label='critical value')
         ax.fill_between(x, null_dist.pmf(x)
@@ -102,9 +112,9 @@ class RTD_analyze(object):
                        ,alpha=0.25
                        ,color='Green'
                        ,label='Power')
-        ax.legend(loc='best')
-        ax.set_xlabel(f"# of On-Time Vehicles")
-        ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=14)
+        ax.legend(loc='best', fontsize=graph_fontsize-10)
+        ax.set_xlabel(f"# of On-Time Vehicles (000s)", fontsize=graph_fontsize)
+        ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
 
 if __name__ == '__main__':
 
@@ -130,42 +140,46 @@ if __name__ == '__main__':
 
     # Original Null Hypothesis
     set_figsize = (30,10)
-
+    set_fontsize = 35
+    plt.rc('xtick',labelsize=25)
+    plt.rc('ytick',labelsize=25)
+    alpha_value = 0.01/3
+    
     fig, axs = plt.subplots(1,3,figsize=set_figsize)
 
-    all_routes.plot_null_hypothesis(ax=axs[0], alpha_value=0.01, null_percent=0.86)
-    light_rail.plot_null_hypothesis(ax=axs[1], alpha_value=0.01, null_percent=0.90)
-    bus.plot_null_hypothesis(ax=axs[2], alpha_value=0.01, null_percent=0.86)
-    fig.suptitle(f"Binomial Distribution of Null Hypotheses", fontsize=16)
+    all_routes.plot_null_hypothesis(ax=axs[0], alpha_value=alpha_value, null_percent=0.86)
+    light_rail.plot_null_hypothesis(ax=axs[1], alpha_value=alpha_value, null_percent=0.90)
+    bus.plot_null_hypothesis(ax=axs[2], alpha_value=alpha_value, null_percent=0.86)
+    fig.suptitle(f"Binomial Distribution of Null Hypotheses", fontsize=set_fontsize)
     plt.savefig(f"images/original_null_hypothesis.png")
     
     # Original Alt Hypothesis
     fig, axs = plt.subplots(1,3,figsize=set_figsize)
     
-    all_routes.plot_alt_hypothesis(ax=axs[0], alpha_value=0.01, null_percent=0.86)
-    light_rail.plot_alt_hypothesis(ax=axs[1], alpha_value=0.01, null_percent=0.90)
-    bus.plot_alt_hypothesis(ax=axs[2], alpha_value=0.01, null_percent=0.86)
-    fig.suptitle(f"Binomial Distributions of Null and Alternate Hypotheses", fontsize=16)
+    all_routes.plot_alt_hypothesis(ax=axs[0], alpha_value=alpha_value, null_percent=0.86)
+    light_rail.plot_alt_hypothesis(ax=axs[1], alpha_value=alpha_value, null_percent=0.90)
+    bus.plot_alt_hypothesis(ax=axs[2], alpha_value=alpha_value, null_percent=0.86)
+    fig.suptitle(f"Binomial Distributions of Null and Alternate Hypotheses", fontsize=set_fontsize)
     plt.savefig(f"images/original_alt_hypothesis.png")
 
     # Modified Null Hypothesis
-    all_routes_null_p = 0.815
+    all_routes_null_p = 0.8125
     light_rail_null_p = 0.87
-    bus_null_p = 0.815
+    bus_null_p = 0.81
 
     fig, axs = plt.subplots(1,3,figsize=set_figsize)
     
-    all_routes.plot_null_hypothesis(ax=axs[0], alpha_value=0.01, null_percent=all_routes_null_p)
-    light_rail.plot_null_hypothesis(ax=axs[1], alpha_value=0.01, null_percent=light_rail_null_p)
-    bus.plot_null_hypothesis(ax=axs[2], alpha_value=0.01, null_percent=bus_null_p)
-    fig.suptitle(f"Binomial Distributions of Null Hypotheses", fontsize=16)
+    all_routes.plot_null_hypothesis(ax=axs[0], alpha_value=alpha_value, null_percent=all_routes_null_p)
+    light_rail.plot_null_hypothesis(ax=axs[1], alpha_value=alpha_value, null_percent=light_rail_null_p)
+    bus.plot_null_hypothesis(ax=axs[2], alpha_value=alpha_value, null_percent=bus_null_p)
+    fig.suptitle(f"Binomial Distributions of Null Hypotheses", fontsize=set_fontsize)
     plt.savefig(f"images/modified_null_hypothesis.png")
 
     # Modified Alt Hypothesis
     fig, axs = plt.subplots(1,3,figsize=set_figsize)
     
-    all_routes.plot_alt_hypothesis(ax=axs[0], alpha_value=0.01, null_percent=all_routes_null_p)
-    light_rail.plot_alt_hypothesis(ax=axs[1], alpha_value=0.01, null_percent=light_rail_null_p)
-    bus.plot_alt_hypothesis(ax=axs[2], alpha_value=0.01, null_percent=bus_null_p)
-    fig.suptitle(f"Binomial Distributions of Null and Alternate Hypotheses", fontsize=16)
+    all_routes.plot_alt_hypothesis(ax=axs[0], alpha_value=alpha_value, null_percent=all_routes_null_p)
+    light_rail.plot_alt_hypothesis(ax=axs[1], alpha_value=alpha_value, null_percent=light_rail_null_p)
+    bus.plot_alt_hypothesis(ax=axs[2], alpha_value=alpha_value, null_percent=bus_null_p)
+    fig.suptitle(f"Binomial Distributions of Null and Alternate Hypotheses", fontsize=set_fontsize)
     plt.savefig(f"images/modified_alt_hypothesis.png")

@@ -162,7 +162,11 @@ Next, I wanted to see what sort of range in departure_times I would be dealing w
 It looks like 99.5% of my data falls within (-20, 20) minutes so I zoomed in there to get a better idea of the distribution. There is definitely a normal distribution here with a slight left skew as vehicles are more often slightly late than slightly early. Overall though, this gives me a good idea of where my departure times will fall for the dataset.
 
 ### Null Hypotheses
-If we use the 2019Q3 goals (86% System, 90% Light Rail, 86% Bus) for our Null Hypothesis, we can see that COVID-19 and the RTD driver shortage of 2020 had significant impacts to the on-time departure rate. The p-value for each of our route types is below our stated $\alpha = 0.01$, which means we can **reject the Null Hypothesis that RTD's on-time departure rate during the measured time period was 86% or greater**.
+If we use the 2019Q3 goals (86% System, 90% Light Rail, 86% Bus) for our Null Hypothesis, we can see that COVID-19 and the RTD driver shortage of 2020 had significant impacts to the on-time departure rate. Since I am running 3 experiments:
+$$\large H_{0_{system}}: \text{On Time Service >= 86\%}\ \| \ \large H_{A_{system}}: \text{On Time Service < 86\%}$$ 
+$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 90\%}\ \ \| \ \large H_{A_{\text{light rail}}}: \text{On Time Service < 90\%}$$ 
+$$\large H_{0_{\text{bus}}}: \text{On Time Service >= 86\%}\ \ \| \ \large H_{A_{\text{bus}}}: \text{On Time Service < 86\%}$$ 
+I need to correct for using my original stated $\large \alpha = 0.01$. Using the **Bonferroni correction**, I would instead use $\large \frac{0.01}{3}$ or $\large \alpha=0.003$. The p-value for each of our route types is below our $\large \alpha$, which means we can **reject the Null Hypothesis that RTD's on-time departure rate during the measured time period was 86% or greater**.
 
 ![Null Hypothesis](images/original_null_hypothesis.png)
 
