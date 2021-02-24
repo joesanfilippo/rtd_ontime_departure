@@ -27,7 +27,7 @@ class RTD_analyze(object):
         elif ~(self.route_type == 'All') & (self.route_label == 'All'):
             self.data = rtd_data.df[rtd_data.df.route_type == self.route_type]
         else:
-            self.data = rtd_data.df[rtd_data.df.route_label == self.route_label]
+            self.data = rtd_data.df[rtd_data.df.route_short_name == self.route_label]
 
     def calculate_ontime_departure(self):
         '''
@@ -56,9 +56,12 @@ class RTD_analyze(object):
     def plot_null_hypothesis(self, ax, alpha_value, null_percent):
         def thousands(x, pos):
             'The two args are the value and tick position'
-            return '%3.1f' % (x/1000)
+            return '%3.0f' % (x/1000)
 
-        graph_fontsize = 30
+        if (self.route_type == 'All') & ~(self.route_label == 'All'): 
+            graph_fontsize = 20
+        else:
+            graph_fontsize = 30
 
         null_dist = stats.binom(n=self.total_stops, p=null_percent)
         x = np.linspace(0, self.total_stops, self.total_stops+1)
@@ -71,22 +74,28 @@ class RTD_analyze(object):
         ax.axvline(null_dist.ppf(alpha_value)
                   ,linestyle='--'
                   ,color='grey'
-                  ,label='$\\alpha$ = Type I Error')
+                  ,label=f"$\\alpha$ = {alpha_value:.2f}")
         ax.fill_between(x
                         ,null_dist.pmf(x)
                         ,where= x <= observed_data
                         ,alpha=0.25
-                        ,label=f"P Value = {null_dist.cdf(observed_data):.3f}")
-        ax.legend(loc='best', fontsize=graph_fontsize-10)
+                        ,label=f"p-value = {null_dist.cdf(observed_data):.2f}")
+        ax.legend(loc='upper right', fontsize=graph_fontsize-10)
         ax.set_xlabel('# of On-Time Vehicles (000s)', fontsize=graph_fontsize)
-        ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
+        if (self.route_type == 'All') & ~(self.route_label == 'All'): 
+            ax.set_title(f"{self.route_label} Route", fontsize=graph_fontsize)
+        else:
+            ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
 
     def plot_alt_hypothesis(self, ax, alpha_value, null_percent):
         def thousands(x, pos):
             'The two args are the value and tick position'
-            return '%3.1f' % (x/1000)
-
-        graph_fontsize = 30
+            return '%3.0f' % (x/1000)
+        
+        if (self.route_type == 'All') & ~(self.route_label == 'All'): 
+            graph_fontsize = 25
+        else:
+            graph_fontsize = 30
 
         null_dist = stats.binom(n=self.total_stops, p=null_percent)
         alt_dist = stats.binom(n=self.total_stops, p=self.ontime_departure_rate)
@@ -102,7 +111,7 @@ class RTD_analyze(object):
         ax.fill_between(x, null_dist.pmf(x)
                        ,where= (x <= null_dist.ppf(alpha_value))
                        ,alpha=0.25
-                       ,label='$\\alpha$ = Type I Error')
+                       ,label=f"$\\alpha$ = Type I Error")
         ax.fill_between(x, alt_dist.pmf(x)
                        ,where= (x >= null_dist.ppf(alpha_value))
                        ,alpha=0.25
@@ -112,10 +121,13 @@ class RTD_analyze(object):
                        ,alpha=0.25
                        ,color='Green'
                        ,label='Power')
-        ax.legend(loc='best', fontsize=graph_fontsize-10)
+        ax.legend(loc='upper right', fontsize=graph_fontsize-10)
         ax.set_xlabel(f"# of On-Time Vehicles (000s)", fontsize=graph_fontsize)
-        ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
-
+        if (self.route_type == 'All') & ~(self.route_label == 'All'): 
+            ax.set_title(f"{self.route_label} Route", fontsize=graph_fontsize)
+        else:
+            ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
+            
 if __name__ == '__main__':
 
     rtd_data = clean_rtd_data.RTD_df(bucket_name='rtd-on-time-departure', file_name='rtd_data.csv')
@@ -139,13 +151,14 @@ if __name__ == '__main__':
     plt.savefig('images/departure_time_histogram.png')
 
     # Original Null Hypothesis
-    set_figsize = (30,10)
+    set_figsize = (35,10)
     set_fontsize = 35
     plt.rc('xtick',labelsize=25)
     plt.rc('ytick',labelsize=25)
     alpha_value = 0.01/3
     
     fig, axs = plt.subplots(1,3,figsize=set_figsize)
+    fig.tight_layout()
 
     all_routes.plot_null_hypothesis(ax=axs[0], alpha_value=alpha_value, null_percent=0.86)
     light_rail.plot_null_hypothesis(ax=axs[1], alpha_value=alpha_value, null_percent=0.90)
@@ -155,6 +168,7 @@ if __name__ == '__main__':
     
     # Original Alt Hypothesis
     fig, axs = plt.subplots(1,3,figsize=set_figsize)
+    fig.tight_layout()
     
     all_routes.plot_alt_hypothesis(ax=axs[0], alpha_value=alpha_value, null_percent=0.86)
     light_rail.plot_alt_hypothesis(ax=axs[1], alpha_value=alpha_value, null_percent=0.90)
@@ -163,11 +177,12 @@ if __name__ == '__main__':
     plt.savefig(f"images/original_alt_hypothesis.png")
 
     # Modified Null Hypothesis
-    all_routes_null_p = 0.8125
-    light_rail_null_p = 0.87
-    bus_null_p = 0.81
+    all_routes_null_p = 0.813
+    light_rail_null_p = 0.865
+    bus_null_p = 0.805
 
     fig, axs = plt.subplots(1,3,figsize=set_figsize)
+    fig.tight_layout()
     
     all_routes.plot_null_hypothesis(ax=axs[0], alpha_value=alpha_value, null_percent=all_routes_null_p)
     light_rail.plot_null_hypothesis(ax=axs[1], alpha_value=alpha_value, null_percent=light_rail_null_p)
@@ -177,9 +192,43 @@ if __name__ == '__main__':
 
     # Modified Alt Hypothesis
     fig, axs = plt.subplots(1,3,figsize=set_figsize)
+    fig.tight_layout()
     
     all_routes.plot_alt_hypothesis(ax=axs[0], alpha_value=alpha_value, null_percent=all_routes_null_p)
     light_rail.plot_alt_hypothesis(ax=axs[1], alpha_value=alpha_value, null_percent=light_rail_null_p)
     bus.plot_alt_hypothesis(ax=axs[2], alpha_value=alpha_value, null_percent=bus_null_p)
     fig.suptitle(f"Binomial Distributions of Null and Alternate Hypotheses", fontsize=set_fontsize)
     plt.savefig(f"images/modified_alt_hypothesis.png")
+
+    # Top 10 Routes
+    top_10_routes = list(all_routes.data.groupby('route_short_name').size().sort_values(ascending=False)[0:10].index)
+    alpha_value = 0.01/10
+    set_figsize = (15,75)
+    set_fontsize = 25
+    plt.rc('xtick',labelsize=15)
+    plt.rc('ytick',labelsize=15)
+   
+    fig, axs = plt.subplots(10,1, figsize=set_figsize)
+    fig.tight_layout()
+
+    for idx, route in enumerate(top_10_routes):
+        route_data = RTD_analyze(rtd_data, route_label=route)
+        route_data.calculate_ontime_departure()
+        route_data.plot_null_hypothesis(ax=axs[idx], alpha_value=alpha_value, null_percent=0.86)
+    
+    fig.suptitle(f'Binomial Distributions of Null Hypotheses', fontsize=set_fontsize)
+    plt.savefig(f"images/top_10_routes_null_hypothesis.png")
+
+    fig, axs = plt.subplots(10,1, figsize=set_figsize)
+    fig.tight_layout()
+
+    for idx, route in enumerate(top_10_routes):
+        route_data = RTD_analyze(rtd_data, route_label=route)
+        route_data.calculate_ontime_departure()
+        route_data.plot_alt_hypothesis(ax=axs[idx], alpha_value=alpha_value, null_percent=0.86)
+    
+    fig.suptitle(f'Binomial Distributions of Null and Alternate Hypotheses', fontsize=set_fontsize)
+    plt.savefig(f"images/top_10_routes_alt_hypothesis.png")
+
+
+

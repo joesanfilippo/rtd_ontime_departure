@@ -136,7 +136,7 @@ Once I had my data down to just rows where a vehicle was at or immediately arriv
 During the process of cleaning the data, I noticed that several days were missing entirely (from 2021-02-19 19:45 to 2021-02-22 07:55). This appears to have been caused by renaming my repository from **Capstone_1** to **rtd_on_time_departure**. The name change had several downstream impacts, most significantly on the crontab job I had running where the directory name was no longer found. While this is unfortunate, it will not severely impact my overall analysis.
 
 ## EDA
-
+---
 Now that I have my data in a workable state, I wanted to visualize the entire dataset to see the range of values I would be working with. 
 
 ### Vehicle Lat / Lngs
@@ -162,21 +162,26 @@ Next, I wanted to see what sort of range in departure_times I would be dealing w
 It looks like 99.5% of my data falls within (-20, 20) minutes so I zoomed in there to get a better idea of the distribution. There is definitely a normal distribution here with a slight left skew as vehicles are more often slightly late than slightly early. Overall though, this gives me a good idea of where my departure times will fall for the dataset.
 
 ### Null Hypotheses
-If we use the 2019Q3 goals (86% System, 90% Light Rail, 86% Bus) for our Null Hypothesis, we can see that COVID-19 and the RTD driver shortage of 2020 had significant impacts to the on-time departure rate. Since I am running 3 experiments:
+If we use the 2019Q3 goals (86% System, 90% Light Rail, 86% Bus) for our Null Hypothesis, we can see that COVID-19 and the RTD operator shortage of 2020 had significant impacts to the on-time departure rate. Since I am running 3 experiments:
 $$\large H_{0_{system}}: \text{On Time Service >= 86\%}\ \| \ \large H_{A_{system}}: \text{On Time Service < 86\%}$$ 
-$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 90\%}\ \ \| \ \large H_{A_{\text{light rail}}}: \text{On Time Service < 90\%}$$ 
+$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 90\%}\ \| \ \large H_{A_{\text{light rail}}}: \text{On Time Service < 90\%}$$ 
 $$\large H_{0_{\text{bus}}}: \text{On Time Service >= 86\%}\ \ \| \ \large H_{A_{\text{bus}}}: \text{On Time Service < 86\%}$$ 
-I need to correct for using my original stated $\large \alpha = 0.01$. Using the **Bonferroni correction**, I would instead use $\large \frac{0.01}{3}$ or $\large \alpha=0.003$. The p-value for each of our route types is below our $\large \alpha$, which means we can **reject the Null Hypothesis that RTD's on-time departure rate during the measured time period was 86% or greater**.
+I will need to correct for using my original stated $\large \alpha = 0.01$ by using the **Bonferroni correction**. I would instead use $\large \frac{0.01}{3}$ or $\large \alpha=0.003$. The p-value for each of our route types is below our $\large \alpha$, which means we can **reject the Null Hypothesis that RTD's on-time departure rate during the measured time period was 86% or greater**.
 
 ![Null Hypothesis](images/original_null_hypothesis.png)
 
 ### Alternate Hypothesis
-For each of our experiments, you can see that the alternate hypothesis distribution is well below the critical value ($\large \alpha \large$=0.01) which results in a very little chance of Type I or Type II Errors. 
+For each of our experiments, you can also see that the alternate hypothesis distribution is well below the critical value ($\large \alpha \large$=0.003) which results in a very little chance of Type I or Type II Errors. These graphs show us that there is indeed a difference between the stated on-time service goal of 86% (90% for Light Rail) and the observed on-time service from February 16th, 2020 - February 22nd, 2020. This of course makes sense because of what happened in 2020 with COVID-19 and the operator shortage.
 
 ![Alternate Hypothesis](images/original_alt_hypothesis.png)
 
 
 ### Modified Null Hypotheses
+Since there is such a drastic difference between the 2019Q3 goal and current state, it might be better to estimate what would be a good goal for RTD to set for their routes? We can use the same statistically analysis to see what on-time service % would still be above the current state but within reach with improvement. I set the Null Hypothesis for each experiment to be:
+
+$$\large H_{0_{system}}: \text{On Time Service >= 81.35\%}$$ 
+$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 86\%}$$ 
+$$\large H_{0_{\text{bus}}}: \text{On Time Service >= 81\%}$$ 
 
 ![Modified Null Hypothesis](images/modified_null_hypothesis.png)
 
@@ -184,13 +189,19 @@ For each of our experiments, you can see that the alternate hypothesis distribut
 
 ![Modified Alternate Hypothesis](images/modified_alt_hypothesis.png)
 
+### Top 10 Routes
+I also 
+
+![Top 10 Routes Null Hypothesis](images/top_10_routes_null_hypothesis.png)
+
+![Top 10 Routes Alternate Hypothesis](images/top_10_routes_alt_hypothesis.png)
 
 ## Conclusions
-
+---
 ### Lessons Learned
 * Make your cron jobs foolproof
 * If you know your dataset is going to be large, store it in an AWS S3 bucket from the beginning
 
 
 ## Future Work
-
+---
