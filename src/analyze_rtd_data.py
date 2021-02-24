@@ -1,4 +1,5 @@
 import folium
+import shapely
 import numpy as np
 import pandas as pd
 import clean_rtd_data
@@ -11,6 +12,7 @@ plt.style.use('ggplot')
 font = {'weight': 'bold'
        ,'size': 16}
 plt.rc('font', **font)
+from shapely.geometry import Point
 
 class RTD_analyze(object):
 
@@ -177,7 +179,6 @@ class RTD_analyze(object):
 
         for stop in range(0, len(stop_list)):
             folium.Marker(location=stop_list[stop]
-                        ,name=rt
                         ,icon=folium.Icon(
                             color='white'
                             ,icon_color=step(on_time_list[stop])
@@ -190,6 +191,49 @@ class RTD_analyze(object):
             stop_map.save(f"html/{self.route_type}_cluster_map.html")
         else:
             stop_map.save(f"html/{self.route_label}_cluster_map.html")
+
+    def neighborhood_map(self):
+        
+        neighborhood_shapes = gpd.read_file('data/statistical_neighborhoods/statistical_neighborhoods.shp').set_index('NBHD_ID')
+        geo_rtd = gpd.GeoSeries(self.data.apply(lambda z: Point(z['stop_lng'], z['stop_lat']), 1),crs={'init': 'epsg:4326'})
+        geo_stops = gpd.GeoDataFrame(self.data.drop(['stop_lat', 'stop_lng'], 1), geometry=geo_rtd)
+        geo_stops = geo_stops[['departure_status', 'geometry']].reset_index()
+        neighborhood_stop_data = gpd.tools.sjoin(neighborhood_shapes, geo_stops.to_crs(neighborhood_shapes.crs), how='inner')
+
+        neighborhood_on_time = neighborhood_stop_data.groupby(['NBHD_NAME']).departure_status.apply(lambda x: (x=='on_time').sum()).reset_index(name='on_time_stops')
+        neighborhood_total = neighborhood_stop_data.groupby(['NBHD_NAME']).departure_status.size().reset_index(name='total_stops')
+        neighborhood_data = pd.merge(neighborhood_on_time, neighborhood_total, on=['NBHD_NAME'])
+        neighborhood_data['on_time_percent'] = neighborhood_data.on_time_stops / neighborhood_data.total_stops
+        neighborhood_data = neighborhood_data[neighborhood_data.total_stops > 100]
+
+        neighborhood_map = folium.Map(location=[39.7426534, -104.9904138]
+              ,tiles='https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
+              ,attr='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors')
+
+        folium.Choropleth(neighborhood_shapes
+                        ,data=neighborhood_data
+                        ,columns=['NBHD_NAME', 'on_time_percent']
+                        ,key_on = 'feature.properties.NBHD_NAME'
+                        ,fill_color = 'PRGn'
+                        ,fill_opacity = 0.7
+                        ,line_opacity = 0.5
+                        ).add_to(neighborhood_map)
+        geo_style = {
+            "color": "#fffff"
+            ,"weight": 0
+            ,"opacity": 0
+        }
+
+        for name, ot_departure in zip(neighborhood_data.NBHD_NAME, neighborhood_data.on_time_percent):
+            neighborhood_json = folium.GeoJson(neighborhood_shapes[neighborhood_shapes.NBHD_NAME == name].to_json()
+                                            ,style_function=lambda x: geo_style
+                                            ).add_to(neighborhood_map)
+            neighborhood_json.add_child(folium.Popup(f"{name}: {ot_departure:.1%}"))
+        
+        if self.route_label == 'All':
+            neighborhood_map.save(f"html/{self.route_type}_neighborhood_map.html")
+        else:
+            neighborhood_map.save(f"html/{self.route_label}_neighborhood_map.html")
 
 if __name__ == '__main__':
 
@@ -299,3 +343,8 @@ if __name__ == '__main__':
     all_routes.cluster_map()
     light_rail.cluster_map()
     bus.cluster_map()
+
+    # Neighborhood Maps
+    all_routes.neighborhood_map()
+    light_rail.neighborhood_map()
+    bus.neighborhood_map()
