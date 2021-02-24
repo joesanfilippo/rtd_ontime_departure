@@ -6,7 +6,7 @@ The mission of Denver's Regional Transportation District (RTD) is to **provide c
 
 ![RTD 2019Q3 KPIs](images/rtd_2019Q3_kpis.png)
 
-I would like to investigate whether or not they are still meeting this goal and what lines/routes have a higher or lower on-time performance than the entire system as whole. My hypotheses will be:
+As someone who recently transitioned from a personally owned vehicle to more sustainable forms of transportation, I would like to investigate whether or not they are still meeting this goal and what lines/routes have a higher or lower on-time performance than the entire system as whole. My hypotheses will be:
 
 $$\large H_0 \text{: RTD's Local On-Time Service >= 86\%} $$
 $$\large H_A \text{: RTD's Local On-TIme Service < 86\%} $$
@@ -210,14 +210,39 @@ I also wanted to dive one level deeper to see what the top 10 routes by # of sto
 ![Top 10 Routes Alternate Hypothesis](images/top_10_routes_alt_hypothesis.png)
 
 ### Map of Neighborhoods by On-Time Departure Percent
-Finally, equity plays a large role in making sure that RTD is providing convenient and reliable service across the entire Metro Denver Area. So in order to determine this, I plotted the on-time departure rate across all Denver neighborhoods according to where the stop is located. You can dive into the map at [All Routes Neighborhood Map]('html/All_neighborhood_map.html')
+Finally, equity plays a large role in making sure that RTD is providing convenient and reliable service across the entire Metro Denver Area. So in order to determine this, I plotted the on-time departure rate across all Denver neighborhoods according to where the stop is located. You can dive into the map at [All Routes Neighborhood Map](html/All_neighborhood_map.html)
+
+![All Routes Neighborhood Map](images/all_routes_neighborhood.png)
+
+You can see that several neighborhoods have a lower on-time departure percentage than the system average, specifically:
+
+| Neighborhood name | On-Time Departure % | 
+|-------------------|---------------------|
+| Globeville        | 59.0%               |
+| City Park West    | 68.3%               |
+| Five Points       | 72.0%               |
+| East Colfax       | 72.7%               |
+| Elyria Swansea    | 74.6%               |
+
+These are also traditionally low-income, under-served neighborhoods as well where residents might be reliant on public transportation for their jobs. If less than 3 out of 4 busses show up on time, they may be forced to rely on other sources of transportation or could get fired from a job for circumstances outside their control.
 
 ## Conclusions
 ---
+It isn't hard to see that 2020 impacted RTD's on-time departure metric in a severely negative way. Having a reliable, convenient public transportation system is crucial to convincing people that life without a personally owned vehicle is possible, especially in Denver. Politicians will need to do more than make grandiose proclamations like "I will make the trains run on time" and instead put serious resources into making public transportation reliable, convenient, and equitable for all. In order to convince them though, datasets and analysis like this are just the tip of the iceberg for what will be needed.
+
 ### Lessons Learned
-* Make your cron jobs foolproof
-* If you know your dataset is going to be large, store it in an AWS S3 bucket from the beginning
-* It is incredibly annoying to get your plots right when you have a large dataset
+**Make your cron jobs foolproof**
+
+I ran into an issue during the middle of my data collection where my cron job failed to run. When setting up your cron job, make sure that you are using directories and files that you know you can keep from changing during the data collection process.
+
+**If you know your dataset is going to be large, store it in an AWS S3 bucket from the beginning**
+
+Halfway through my project, my dataset grew too large to store on Github. If you know you are going to be working with datasets over 100MB, store them in an AWS S3 bucket from the very beginning. This will save you from problems pushing to Github in the future when your file becomes too big.
+
+**It is incredibly annoying to get your plots right when you have a large dataset**
+
+When working on plots, where possible, use a smaller subset of your data to make sure the legends, axis labels, titles, etc. all look good then run it once on your larger dataset. This will prevent you from having to wait 5-10 minutes for a plot to load when the only change you made was `ax.legend(fontsize=15)` to `ax.legend(fontsize=16)`
 
 ## Future Work
 ---
+If I were to improve this project in the future, I would use a NoSQL or unstructured database to store the data. MongoDBs are perfect for storing GTFS-RT feeds because the feed will have some entity's that are on trip while others are not and they can all be stored in the same place without having to worry about missing variables.
