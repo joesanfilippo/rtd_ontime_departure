@@ -178,24 +178,36 @@ For each of our experiments, you can also see that the alternate hypothesis dist
 
 
 ### Modified Null Hypotheses
-Since there is such a drastic difference between the 2019Q3 goal and current state, it might be better to estimate what would be a good goal for RTD to set for their routes? We can use the same statistically analysis to see what on-time service % would still be above the current state but within reach with improvement. For this experiment, I wanted to solve for a Null Probability given my conditions:
+Since there is such a drastic difference between the 2019Q3 goal and current state, it might be better to estimate what would be a good goal for RTD to set for their routes? We can use the same statistical analysis to see what on-time service % would still be above the current state but within reach for significant improvement. For this experiment, I wanted to solve for a Null Probability given my conditions:
 
-$$\large H_{0_{system}}: \text{On Time Service >= 81.3\%}$$ 
-$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 86.8\%}$$ 
-$$\large H_{0_{\text{bus}}}: \text{On Time Service >= 81.25\%}$$ 
+$$\large n=\text{Observed number of stops}$$
+$$\large H_A=\text{Observed on-time departure}$$
+$$\large \alpha=0.003$$
+$$\large \beta=0.20$$
+$$\large Power=0.80$$
 
-![Modified Null Hypothesis](images/modified_null_hypothesis.png)
+Given the above parameters I am able to solve for the difference between the observed on-time departure and the null hypothesis on-time departure. When I did this, I came up with the following 3 values for System wide, Light Rail, and Bus routes:
 
-### Modified Alternate Hypotheses
+$$\large H_{0_{system}}: \text{On Time Service >= 81.29\%}$$ 
+$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 86.60\%}$$ 
+$$\large H_{0_{\text{bus}}}: \text{On Time Service >= 81.05\%}$$ 
+
+These can be used by RTD to set attainable goals that will have a significant impact on the current state of on-time departures across the system.
+
+<!-- ![Modified Null Hypothesis](images/modified_null_hypothesis.png) -->
+
+<!-- ### Modified Alternate Hypotheses -->
 
 ![Modified Alternate Hypothesis](images/modified_alt_hypothesis.png)
 
 ### Top 10 Routes
-I also 
+I also wanted to dive one level deeper to see what the top 10 routes by # of stops collected look like compared to the goal of 86% on-time departure. The only route where we would fail to reject the Null Hypothesis is [Route 40](https://www.rtd-denver.com/app/nextride/route/40?direction=0) which travels North & South along Colorado Blvd. Our p-value of 0.024 is not < the alpha of $\frac{0.01}{10} = 0.001$ (correcting for multiple experiements using Bonferrroni again).
 
-![Top 10 Routes Null Hypothesis](images/top_10_routes_null_hypothesis.png)
+<!-- ![Top 10 Routes Null Hypothesis](images/top_10_routes_null_hypothesis.png) -->
 
 ![Top 10 Routes Alternate Hypothesis](images/top_10_routes_alt_hypothesis.png)
+
+### Map of Stops with on-time %
 
 ## Conclusions
 ---

@@ -1,7 +1,11 @@
+import folium
 import numpy as np
 import pandas as pd
 import clean_rtd_data
+import geopandas as gpd
+from folium import plugins
 import scipy.stats as stats
+import branca.colormap as cmp
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 font = {'weight': 'bold'
@@ -84,7 +88,7 @@ class RTD_analyze(object):
         x = np.linspace(0, self.total_stops, self.total_stops+1)
         observed_data = self.ontime_stops
         
-        ax.plot(x, null_dist.pmf(x), label='$H_O$')
+        ax.plot(x, null_dist.pmf(x), label=f"$H_0$ = {null_percent:.2%}")
         ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%1.1e'))
         ax.xaxis.set_major_formatter(plt.FuncFormatter(thousands))
         ax.set_xlim(null_dist.ppf(0.00001), null_dist.ppf(0.99999))
@@ -116,8 +120,8 @@ class RTD_analyze(object):
         x = np.linspace(0, self.total_stops, self.total_stops+1)
         observed_data = self.ontime_stops
 
-        ax.plot(x, null_dist.pmf(x), label='$H_0$')
-        ax.plot(x, alt_dist.pmf(x), label='$H_A$')
+        ax.plot(x, null_dist.pmf(x), label=f"$H_0$ = {null_percent:.2%}")
+        ax.plot(x, alt_dist.pmf(x), label=f"$H_A$ = {self.ontime_departure_rate:.2%}")
         ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%1.1e'))
         ax.xaxis.set_major_formatter(plt.FuncFormatter(thousands))
         ax.set_xlim(min(alt_dist.ppf(0.00001), null_dist.ppf(0.00001)), max(alt_dist.ppf(0.99999), null_dist.ppf(0.99999)))
@@ -134,14 +138,59 @@ class RTD_analyze(object):
                        ,where= (x < null_dist.ppf(alpha_value))
                        ,alpha=0.25
                        ,color='Green'
-                       ,label='Power') 
+                       ,label=f"Power = {alt_dist.cdf(null_dist.ppf(alpha_value)):.1%}") 
         ax.legend(loc=legend_loc, fontsize=graph_fontsize-10)
         ax.set_xlabel(f"# of On-Time Vehicles (000s)", fontsize=graph_fontsize)
         if (self.route_type == 'All') & ~(self.route_label == 'All'): 
             ax.set_title(f"{self.route_label} Route", fontsize=graph_fontsize)
         else:
             ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
-            
+
+    def cluster_map(self):
+        # Cluster of Stops with On-Time Departure %
+        on_time = self.data.groupby(['stop_id', 'stop_name', 'stop_lat', 'stop_lng', 'route_type']).departure_status.apply(lambda x: (x == 'on_time').sum()).reset_index(name='on_time_stops')
+        total = self.data.groupby(['stop_id', 'stop_name', 'stop_lat', 'stop_lng', 'route_type']).size().reset_index(name='total_stops')
+
+        map_data = pd.merge(on_time, total, on=['stop_id', 'stop_name', 'stop_lat', 'stop_lng', 'route_type'])
+        map_data['on_time_percent'] = map_data.on_time_stops / map_data.total_stops
+        map_data['on_time_str'] = map_data.on_time_percent.apply(lambda x: f"{x:.1%}")
+        map_data['map_icon'] = map_data.route_type.apply(lambda x: x if x=='bus' else 'train')
+        map_data = map_data[map_data.total_stops >= 50]
+
+        step = cmp.LinearColormap(
+            ['red', 'yellow', 'green']
+            ,vmin=round(min(map_data.on_time_percent),2)
+            ,vmax=round(max(map_data.on_time_percent),2)
+            ,caption='On-Time Departure Percentage'
+            )
+
+        stops = map_data[['stop_lat', 'stop_lng']]
+        stop_list = stops.values.tolist()
+        icon_list = map_data.map_icon.tolist()
+        on_time_list = map_data.on_time_percent.tolist()
+        name_list = map_data.stop_name.tolist()
+
+        stop_map = folium.Map(location=[39.7426534, -104.9904138]
+                             ,tiles='Stamen Terrain')
+
+        marker_cluster = plugins.MarkerCluster().add_to(stop_map)
+
+        for stop in range(0, len(stop_list)):
+            folium.Marker(location=stop_list[stop]
+                        ,name=rt
+                        ,icon=folium.Icon(
+                            color='white'
+                            ,icon_color=step(on_time_list[stop])
+                            ,icon=icon_list[stop]
+                            ,prefix='fa')
+                            ,popup=f"{name_list[stop]}: {on_time_list[stop]:.1%}"
+                        ).add_to(marker_cluster)
+        
+        if self.route_label == 'All':
+            stop_map.save(f"html/{self.route_type}_cluster_map.html")
+        else:
+            stop_map.save(f"html/{self.route_label}_cluster_map.html")
+
 if __name__ == '__main__':
 
     rtd_data = clean_rtd_data.RTD_df(bucket_name='rtd-on-time-departure', file_name='rtd_data.csv')
@@ -217,7 +266,7 @@ if __name__ == '__main__':
     # Top 10 Routes
     top_10_routes = list(all_routes.data.groupby('route_short_name').size().sort_values(ascending=False)[0:10].index)
     alpha_value = 0.01/10
-    set_figsize = (15,70)
+    set_figsize = (20,70)
     plt.rc('xtick',labelsize=15)
     plt.rc('ytick',labelsize=15)
    
@@ -245,3 +294,8 @@ if __name__ == '__main__':
     fig.suptitle(f"Binomial Distributions of Null and Alternate Hypotheses"
                 ,fontsize=set_fontsize)
     plt.savefig(f"images/top_10_routes_alt_hypothesis.png")
+
+    # Cluster Maps
+    all_routes.cluster_map()
+    light_rail.cluster_map()
+    bus.cluster_map()
