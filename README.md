@@ -8,11 +8,12 @@ The mission of Denver's Regional Transportation District (RTD) is to **provide c
 
 I would like to investigate whether or not they are still meeting this goal and what lines/routes have a higher or lower on-time performance than the entire system as whole. My hypotheses will be:
 
-* $\large H_0 \large$: RTD's Local On-Time Service >= 86%
-* $\large H_A \large$: RTD's Local On-TIme Service < 86%
+$$\large H_0 \text{: RTD's Local On-Time Service >= 86\%} $$
+$$\large H_A \text{: RTD's Local On-TIme Service < 86\%} $$
 
 ## Dataset
 ---
+### GTFS-RT
 My dataset is pulled from [RTD's Public GTFS-RT (General Transit Feed Specification - Realtime Transit) feeds](https://www.rtd-denver.com/business-center/open-spacial-data/gtfs-rt). There are 3 feeds in RTD's GTFS-RT data:
 1. **Alerts**: This feed includes alerts about unforeseen events like route disruptions and stop closures.
 2. **Trips**: This feed includes trip progress and arrival/departure predictions including delays, cancellations, or changed routes.
@@ -177,11 +178,11 @@ For each of our experiments, you can also see that the alternate hypothesis dist
 
 
 ### Modified Null Hypotheses
-Since there is such a drastic difference between the 2019Q3 goal and current state, it might be better to estimate what would be a good goal for RTD to set for their routes? We can use the same statistically analysis to see what on-time service % would still be above the current state but within reach with improvement. I set the Null Hypothesis for each experiment to be:
+Since there is such a drastic difference between the 2019Q3 goal and current state, it might be better to estimate what would be a good goal for RTD to set for their routes? We can use the same statistically analysis to see what on-time service % would still be above the current state but within reach with improvement. For this experiment, I wanted to solve for a Null Probability given my conditions:
 
-$$\large H_{0_{system}}: \text{On Time Service >= 81.35\%}$$ 
-$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 86\%}$$ 
-$$\large H_{0_{\text{bus}}}: \text{On Time Service >= 81\%}$$ 
+$$\large H_{0_{system}}: \text{On Time Service >= 81.3\%}$$ 
+$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 86.8\%}$$ 
+$$\large H_{0_{\text{bus}}}: \text{On Time Service >= 81.25\%}$$ 
 
 ![Modified Null Hypothesis](images/modified_null_hypothesis.png)
 
