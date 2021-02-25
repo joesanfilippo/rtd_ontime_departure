@@ -25,8 +25,8 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             width: 90%;
-            padding-left: 10%;
-            padding: 1%;
+            margin-left: auto;
+            margin-right: auto;
             }
         .maps {
             width: 100%;
@@ -67,11 +67,9 @@
     </style>
   </head>
   <body class="body">
-    <a id="skip-to-content" href="#content">Skip to the content.</a>
-
     <header class="page-header" role="banner">
       <!-- <h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1> -->
-      <h5 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h2>
+      <h1 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h1>
       {% if site.github.is_project_page %}
         <a href="{{ site.github.repository_url }}" class="btn">View on GitHub</a>
       {% endif %}
@@ -90,7 +88,7 @@
         free 16th Street Mall Ride. According to the 2019 Board of Directors Report, RTD's 
         <a href="https://www.rtd-denver.com/sites/default/files/files/2020-01/Q3-2019-KPIs.pdf">2019Q3 KPI for local on-time performance was 86%</a></p>
         
-    <img src="images/rtd_2019Q3_kpis.png" alt="RTD's 2019Q3 KPIs" style="width:80%; height:35%">
+    <img src="images/rtd_2019Q3_kpis.png" alt="RTD's 2019Q3 KPIs">
     
     <p>As someone who recently transitioned from a personally owned vehicle to more sustainable forms 
         of transportation, I would like to investigate whether or not they are still meeting this goal 
@@ -591,15 +589,141 @@
         These graphs show us that there is indeed a difference between the stated on-time service goal of 86% 
         (90% for Light Rail) and the observed on-time service from February 16th, 2020 - February 22nd, 2020. 
         This of course makes sense because of what happened in 2020 with COVID-19 and the operator shortage.
-
+        <br>
         <img src="images/original_alt_hypothesis.png" alt="Alternate Hypothesis">
     </p>
 
+    <h4>Modified Null Hypothesis</h4>
+    <p>
+        Since there is such a drastic difference between the 2019Q3 goal and current state, 
+        it might be better to estimate what would be a good goal for RTD to set for their routes? 
+        We can use the same statistical analysis to see what on-time service % would still be above the 
+        current state but within reach for significant improvement. For this experiment, I wanted to solve for a 
+        Null probability given my conditions:
 
+        $$\large n=\text{Observed number of stops}$$
+        $$\large \mu_A=\text{Observed on-time departure rate}$$
+        $$\large \alpha=0.003$$
+        $$\large \beta=0.20$$
+        $$\large Power=0.80$$
 
-    <div class="maps">{% include html/All_cluster_map.html %}</div>
+        Given the above parameters I am able to solve for the difference between the observed on-time departure rate 
+        and the null hypothesis on-time departure rate. When I did this, I came up with the following 3 values for 
+        System wide, Light Rail, and Bus routes:
+
+        $$\large H_{0_{system}}: \text{On Time Service >= 81.29%}$$ 
+        $$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 86.60%}$$ 
+        $$\large H_{0_{\text{bus}}}: \text{On Time Service >= 81.05%}$$ 
+
+        These can be used by RTD to set attainable goals that will have a significant impact on the current state of 
+        on-time departures across the system. The difference between \(H_0\) and \(H_A\) is only a fraction of a percent 
+        in most cases, showing how small of a change you need for a significant difference when you have such a large 
+        number of observations.
+
+        <img src="images/modified_alt_hypothesis.png" alt="Modified Alternate Hypothesis">
+    </p>
+
+    <h4>Top 10 Routes</h4>
+    <p>
+        I also wanted to dive one level deeper to see what the top 10 routes by # of stops collected look like 
+        compared to the goal of 86% on-time departure. The only route where we would fail to reject the Null Hypothesis 
+        is <a href="https://www.rtd-denver.com/app/nextride/route/40?direction=0">Route 40</a> which travels 
+        North & South along Colorado Blvd. Our p-value of 0.024 is not less than the alpha of \(\frac{0.01}{10} = 0.001\) 
+        (correcting for multiple experiments using Bonferrroni again).
+
+        <img src="images/top_10_routes_alt_hypothesis.png" alt="Top 10 Routes Alternate Hypothesis">
+
+    </p>
+
+    <h4>Map of Neighborhoods by On-Time Departure Percent</h4>
+
+    <p>
+        Finally, equity plays a large role in making sure that RTD is providing convenient and reliable service across 
+        the entire Metro Denver Area. So in order to determine this, I plotted the on-time departure rate across all 
+        Denver neighborhoods according to where the stop is located.
+        
+        <div class="maps">{% include html/All_neighborhood_map.html %}</div>
+    </p>
+    <p>
+        You can see that several neighborhoods have a lower on-time departure percentage than 
+        the system average, specifically:
+
+        <table class="table" style="width:50%; margin-left:auto; margin-right:auto;">
+            <thead>
+                <th class="th">Neighborhood name</th>
+                <th class="th">On-Time Departure Rate</th>
+            </thead>
+            <tr>
+                <td class="td">Globeville</td>
+                <td class="td" style="text-align:center;">59.0%</td>
+            </tr>
+            <tr>
+                <td class="td">City Park West</td>
+                <td class="td" style="text-align:center;">68.3%</td>
+            </tr>
+            <tr>
+                <td class="td">Five Points</td>
+                <td class="td" style="text-align:center;">72.0%</td>
+            </tr>
+            <tr>
+                <td class="td">East Colfax</td>
+                <td class="td" style="text-align:center;">72.7%</td>
+            </tr>
+            <tr>
+                <td class="td">Elyria Swansea</td>
+                <td class="td" style="text-align:center;">74.6%</td>
+            </tr>
+        </table>
+
+        Reliable, convenient transportation is even more important for these neighborhoods 
+        since they are also traditionally low-income and under-served. Residents in these areas 
+        might be reliant on public transportation for their jobs. If less than 
+        3 out of 4 busses show up on time, they may be forced to rely on other sources of 
+        transportation or could get fired from a job for circumstances outside their control.
+    </p>
+
+    <p>
+        You can also look at stops individually using the map below:
+        <div class="maps">{% include html/All_cluster_map.html %}</div>
+    </p>
     
-    
+<h2>Conclusions</h2>
+<hr>
+<p>
+    It isn't hard to see that 2020 impacted RTD's on-time departure metric in a severely negative way. Having a 
+    reliable, convenient public transportation system is crucial to convincing people that life without a 
+    personally owned vehicle is possible, especially in Denver. Politicians will need to do more than make 
+    grandiose proclamations like "I will make the trains run on time" and instead put serious resources into 
+    making public transportation reliable, convenient, and equitable for all. 
+    In order to convince them though, datasets and analysis like this are just the tip of the iceberg for what 
+    will be needed.
+</p>
+
+<h3>Lessons Learned</h3>
+<ul>
+    <li><b>Make your cron jobs foolproof</b>: I ran into an issue during the middle of my data collection where my 
+        cron job failed to run. When setting up your cron job, make sure that you are using directories and files 
+        that you know you can keep from changing during the data collection process.</li>
+    <li><b>If you know your dataset is going to be large, store it in an AWS S3 bucket from the beginning</b>: Halfway 
+        through my project, my dataset grew too large to store on Github. If you know you are going to be working with 
+        datasets over 100MB, store them in an AWS S3 bucket from the very beginning. This will save you from problems 
+        pushing to Github in the future when your file becomes too big.</li>
+    <li><b>It is incredibly annoying to get your plots right when you have a large dataset</b>: When working on plots, 
+        where possible, use a smaller subset of your data to make sure the legends, axis labels, titles, etc. all look 
+        good then run it once on your larger dataset. This will prevent you from having to wait 5-10 minutes for a plot 
+        to load when the only change you made was <code class="code">ax.legend(fontsize=15)</code> to 
+        <code class="code"></code>ax.legend(fontsize=16)</code></li>
+    <li><b>HTML is hard. Learning how to use Github.io pages properly is worth it.</b></li>
+</ul>
+
+<h2>Future Work</h2>
+<hr>
+<p>
+    If I were to improve this project in the future, I would use a NoSQL or unstructured database to store the data. 
+    MongoDBs are perfect for storing GTFS-RT feeds because the feed will have some entity's that are on trip while 
+    others are not and they can all be stored in the same place without having to worry about missing variables.
+</p>
+
     <main id="content" class="main-content" role="main">
       <footer class="site-footer">
         {% if site.github.is_project_page %}
