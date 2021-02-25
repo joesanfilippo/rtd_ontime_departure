@@ -1,6 +1,23 @@
 ---
-layout: cayman
 title: Home
 ---
-<h1>{{ "Hello World!" | downcase }}</h1>
-{% include html/All_neighborhood_map.html %}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }}</title>
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+    <style>
+        .maps {
+            width: 100%;
+            height: 50%;
+            padding-left: 5%;
+            padding-right: 5%;
+        }
+    </style>
+  </head>
+  <body>
+    {{ content }}
+    <div class="maps">{% include html/All_cluster_map.html %}</div>
+  </body>
+</html>
