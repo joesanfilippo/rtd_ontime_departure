@@ -10,13 +10,23 @@
     <meta name="theme-color" content="#157878">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            processEscapes: true
+          }
+        });
+      </script>
     <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
     <style>
         img {
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                width: 90%;
-                padding-left: 10%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 90%;
+            padding-left: 10%;
+            padding: 1%;
             }
         .maps {
             width: 100%;
@@ -27,7 +37,32 @@
         .body {
             padding-left:5%;
             padding-right:5%;
-            font-size:15px
+            font-size:18px
+        }
+        .table, .th, .td {
+            border: 1px solid rgb(184, 183, 183);
+            border-collapse: collapse;
+            padding:10px;
+        }
+        .thead, .th {
+            text-align:center;
+            vertical-align:middle;
+        }
+        .td {
+            text-align:left;
+            vertical-align:middle;
+        }
+        tbody tr:nth-child(even){
+            background-color: #eaf2ff;
+        }
+        .code {
+            background-color: #e9e9e9;
+            color: black;
+        }
+        .code_block {
+            background-color: #e9e9e9;
+            color: black;
+            padding: 10px;
         }
     </style>
   </head>
@@ -81,8 +116,488 @@
         <li><b>Trips</b>: This feed includes trip progress and arrival/departure predictions including delays, cancellations, or changed routes.</li>
         <li><b>Vehicle Position</b>: This feed includes vehicle locations, the upcoming stop, and can include optional data like congestion level (occupancy) of the vehicle.</li>
     </ol>
+    <p>
+        GTFS-RT is documented on <a href="https://developers.google.com/transit/gtfs-realtime/">Google's developers page</a> 
+        and outlines the data format and structure as well as how they use GTFS realtime in Google Maps.
+    </p>
+    <p>
+        When you make a call to a GTFS-RT feed, you will get two main packets of information: the header and entity. 
+        The header includes data about the feed (gtfs_realtime_version, incrementality, and timestamp) and the entity 
+        will include data specific to the feed (alerts, trips, or vehicle positions). I decided to use the Vehicle 
+        Positions feed since it would give me the most accurate data for where a vehicle is currently located and 
+        when they have arrived/departed from a stop. The data I pulled from the Vehicle Positions feed include:
+    </p>
+    <table class="table" style="width:100%;">
+        <thead>
+            <th class="th">Variable name</th>
+            <th class="th">Data type</th>
+            <th class="th">Description</th>
+        </thead>
+        <tr>
+            <td class="td">entity_id</td>
+            <td class="td">String</td>
+            <td class="td">Unique identifier for the row, consists of vehicle_label and timestamp.</td>
+        </tr>
+        <tr>
+            <td class="td">trip_id</td>
+            <td class="td">Integer</td>
+            <td class="td">Unique identifier for a vehicle and route.</td>
+        </tr>
+        <tr>
+            <td class="td">schedule_relationship</td>
+            <td class="td">Integer</td>
+            <td class="td">The relationship between the trip and the static schedule. Can be one of: SCHEDULED=0, ADDED=1, CANCELED=2 in integer form.</td>
+        </tr>
+        <tr>
+            <td class="td">route_id</td>
+            <td class="td">String</td>
+            <td class="td">The unique identifier for a route usually displayed on the vehicle for identification. Examples include 15, 15L, FF1, 104L, Anschutz Shuttle.</td>
+        </tr>
+        <tr>
+            <td class="td">direction_id</td>
+            <td class="td">Integer</td>
+            <td class="td">Either a 1 or 0. Indicates the direction of travel for the route. (Southbound, Westbound, Northbound, etc.)</td>
+        </tr>
+        <tr>
+            <td class="td">vehicle_lat</td>
+            <td class="td">Float</td>
+            <td class="td">The vehicle's current Degrees North in the WGS-84 coordinate system.</td>
+        </tr>
+        <tr>
+            <td class="td">vehicle_lng</td>
+            <td class="td">Float</td>
+            <td class="td">The vehicle's current Degrees East in the WGS-84 coordinate system.</td>
+        </tr>
+        <tr>
+            <td class="td">bearing</td>
+            <td class="td">Integer</td>
+            <td class="td">Bearing, in degrees, clockwise from True North, i.e., 0 is North and 90 is East.</td>
+        </tr>
+        <tr>
+            <td class="td">current_status</td>
+            <td class="td">Integer</td>
+            <td class="td">Either a 0,1, or 2 indicating the vehicle's current status in relation to the upcoming stop. INCOMING_AT=0, STOPPED_AT=1, IN_TRANSIT_TO=2</td>
+        </tr>
+        <tr>
+            <td class="td">timestamp</td>
+            <td class="td">DateTime</td>
+            <td class="td">The date time at which the vehicle's real-time progress was measured.</td>
+        </tr>
+        <tr>
+            <td class="td">stop_id</td>
+            <td class="td">Integer</td>
+            <td class="td">Unique identifier of the stop according to the route_id and trip_id.</td>
+        </tr>
+        <tr>
+            <td class="td">vehicle_id</td>
+            <td class="td">String</td>
+            <td class="td">Unique identifier of the vehicle in string form. Either a 4 digit string or a 32 character string.</td>
+        </tr>
+        <tr>
+            <td class="td">vehicle_label</td>
+            <td class="td">Integer</td>
+            <td class="td">Unique identifier of the vehicle in integer form.</td>
+        </tr>
+    </table>
 
-        <div class="maps">{% include html/All_cluster_map.html %}</div>
+    <p>
+        In order to make sure I was capturing enough data to see if a vehicle had made it to a stop on time 
+        without overtaxing RTD's system, I polled the Vehicle Position feed every minute from February 16th, 2020 
+        to February 22nd, 2020. Since I only wanted vehicles that were on a trip (and not vehicles that were out of 
+        service or on their way back to RTD facilities) I limited my pull to only entities that were on a trip using 
+        <code class="code">entity.vehicle.HasField('trip')</code>. I stored the results into a CSV file for later data analysis.    
+    </p>
+
+    <h3>GTFS Data</h3>
+
+        <p>
+            In addition to realtime data feeds, RTD also has GTFS files that include additional static data to complement 
+            the realtime feeds. The GTFS data I included are:
+        </p>
+        <ol style="padding-left:5%;">
+            <li><b>Trips</b>: Includes additional information about a specific trip, stored in a text file with comma delimiters for the following columns:
+                <table class="table" style="width:100%;">
+                    <thead>
+                        <th class="th">Variable name</th>
+                        <th class="th">Data type</th>
+                        <th class="th">Description</th>
+                    </thead>
+                    <tr>
+                        <td class="td">block_id</td>
+                        <td class="td">String</td>
+                        <td class="td"></td>
+                    </tr>
+                    <tr>
+                        <td class="td">route_id</td>
+                        <td class="td">String</td>
+                        <td class="td">Corresponds to the Route ID in the main dataset</td>
+                    </tr>
+                    <tr>
+                        <td class="td">direction_id</td>
+                        <td class="td">Integer</td>
+                        <td class="td">Corresponds to the Direction ID in the main dataset</td>
+                    </tr>
+                    <tr>
+                        <td class="td">trip_headsign</td>
+                        <td class="td">String</td>
+                        <td class="td">User friendly indicator of which direction the vehicle is travelling, usually displayed at the front of the vehicle. Either the start point or end point of a route.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">shape_id</td>
+                        <td class="td">Integer</td>
+                        <td class="td"></td>
+                    </tr>
+                    <tr>
+                        <td class="td">service_id</td>
+                        <td class="td">String</td>
+                        <td class="td"></td>
+                    </tr>
+                    <tr>
+                        <td class="td">trip_id</td>
+                        <td class="td">Integer</td>
+                        <td class="td"></td>
+                    </tr>
+                </table>
+            </li>
+            <li><b>Routes</b>: Includes additional information about a specific route, stored in a text file with comma delimiters for the following columns:
+                <table class="table" style="width:100%;">
+                    <thead>
+                        <th class="th">Variable name</th>
+                        <th class="th">Data type</th>
+                        <th class="th">Description</th>
+                    </thead>
+                    <tr>
+                        <td class="td">route_long_name</td>
+                        <td class="td">String</td>
+                        <td class="td">The starting stops and ending stops of the route.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">route_short_name</td>
+                        <td class="td">String</td>
+                        <td class="td">Same as route_id.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">route_type</td>
+                        <td class="td">Integer</td>
+                        <td class="td">The vehicle mode, LIGHT_RAIL=0, COMMUTER_RAIL=2, BUS=3.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">route_text_color</td>
+                        <td class="td">String</td>
+                        <td class="td">Hexadecimal color code of the route name and text.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">route_color</td>
+                        <td class="td">String</td>
+                        <td class="td">Hexadecimal color code of the route line.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">agency_id</td>
+                        <td class="td">String</td>
+                        <td class="td">What agency the route belongs to, in my case this will be RTD.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">route_id</td>
+                        <td class="td">String</td>
+                        <td class="td"><b>Primary key to join to the main dataset</b></td>
+                    </tr>
+                    <tr>
+                        <td class="td">route_url</td>
+                        <td class="td">String</td>
+                        <td class="td">URL to lookup the route on RTD's website.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">route_desc</td>
+                        <td class="td">String</td>
+                        <td class="td">Which directions the route travels. (Eastbound & Westbound or Northbound & Southbound)</td>
+                    </tr>
+                </table>
+            </li>
+            <li><b>Stops</b>: Includes additional information about a specific stop, stored in a text file with comma delimiters for the following columns:
+                <table class="table" style="width:100%;">
+                    <thead>
+                        <th class="th">Variable name</th>
+                        <th class="th">Data type</th>
+                        <th class="th">Description</th>
+                    </thead>
+                    <tr>
+                        <td class="td">stop_id</td>
+                        <td class="td">Integer</td>
+                        <td class="td"><b>Primary key to join to the main dataset</b></td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_name</td>
+                        <td class="td">String</td>
+                        <td class="td">User friendly name for the stop, usually consisting of cross-streets adjacent to that stop.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_desc</td>
+                        <td class="td">String</td>
+                        <td class="td">Indicates which direction vehicles are travelling when approaching the stop.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_code</td>
+                        <td class="td">Integer</td>
+                        <td class="td"></td>
+                    </tr>
+                    <tr>
+                        <td class="td">zone_id</td>
+                        <td class="td">Integer</td>
+                        <td class="td"></td>
+                    </tr>
+                    <tr>
+                        <td class="td">location_type</td>
+                        <td class="td">Integer</td>
+                        <td class="td">Either a 0 or 1. 0=Stop or Platform where passengers board or disembark from a transit vehicle. 1=Station which can contain one or more stops/platforms.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_lat</td>
+                        <td class="td">Float</td>
+                        <td class="td"><b>The stop's Degrees North in the WGS-84 coordinate.</b></td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_lon</td>
+                        <td class="td">Float</td>
+                        <td class="td">The stop's Degrees East in the WGS-84 coordinate.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_timezone</td>
+                        <td class="td">String</td>
+                        <td class="td"></td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_url</td>
+                        <td class="td">String</td>
+                        <td class="td">URL to lookup the stop on RTD's website.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">parent_station</td>
+                        <td class="td">Integer</td>
+                        <td class="td">stop_id of the parent location if location_type = 0 and a parent station exists.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">wheelchair_boarding</td>
+                        <td class="td">Integer</td>
+                        <td class="td">Either a 0 or 1. 0=No accessibility information for the stop. 1=Some vehicles at this stop can be boarded by a rider in a wheelchair.</td>
+                    </tr>
+                </table>
+            </li>
+            <li><b>Stop Times</b>: Includes additional information about a specific stop for a specific trip, stored in a text file with comma delimiters for the following columns:
+                <table class="table" style="width:100%;">
+                    <thead>
+                        <th class="th">Variable name</th>
+                        <th class="th">Data type</th>
+                        <th class="th">Description</th>
+                    </thead>
+                    <tr>
+                        <td class="td">trip_id</td>
+                        <td class="td">Integer</td>
+                        <td class="td"><b>Primary key combined with stop_id to join to the main dataset</b></td>
+                    </tr>
+                    <tr>
+                        <td class="td">arrival_time</td>
+                        <td class="td">String</td>
+                        <td class="td">Time in format %h:%m:%s of the scheduled arrival for that stop and trip.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">departure_time</td>
+                        <td class="td">String</td>
+                        <td class="td">Time in format %h:%m:%s of the scheduled departure for that stop and trip.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_id</td>
+                        <td class="td">Integer</td>
+                        <td class="td"><b>Primary key combined with trip_id to join to the main dataset</b></td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_sequence</td>
+                        <td class="td">Integer</td>
+                        <td class="td">What number the stop is of all the trip's stops.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">stop_headsign</td>
+                        <td class="td">String</td>
+                        <td class="td">Corresponds to the trip headsign or end stop of the trip.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">pickup_type</td>
+                        <td class="td">Integer</td>
+                        <td class="td"><b>Indicates the pickup method. In my case all trips will be 0 or empty indicating a regularly scheduled pickup.</b></td>
+                    </tr>
+                    <tr>
+                        <td class="td">drop_off_type</td>
+                        <td class="td">Integer</td>
+                        <td class="td">Indicates the drop_off method. In my case all trips will be 0 or empty indicating a regularly scheduled dropoff.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">shape_dist_traveled</td>
+                        <td class="td">String</td>
+                        <td class="td">Actual distance traveled along the associated shape. This can be used by apps to show how far a vehicle has traveled along their route.</td>
+                    </tr>
+                    <tr>
+                        <td class="td">timepoint</td>
+                        <td class="td">String</td>
+                        <td class="td">Either a 0 or 1. Indicates if arrival and departure times for a stop are strictly adhered to by the vehicle or if they are approximations. In my case, all trips will be 0=Times are considered approximate.</td>
+                    </tr>
+                </table>
+            </li>
+        </ol>
+
+    <h3>Data Cleaning</h3>
+    <p>
+        In order to get the data ready for analysis, I needed to clean up any missing/illogical values and arrange 
+        the data points so that I could determine whether or not a vehicle was at a stop.
+    </p>
+    <p>
+        My first step in cleaning the data was to make sure none of my timestamp values were <code class="code">NULL</code>. 
+        By looking at the shape values before and after, I can see that the only null value was when I initialized 
+        the CSV with the column headers and a null value for each column.
+    </p>
+    <p>
+        Next, I needed to convert the timestamp field into a Pandas datatime with the local timezone 
+        <code class="code">('US/Mountain')</code>. Since the timestamp values were currently integers representing Unix timestamps, 
+        this was a fairly easy process by using:
+    </p>
+    <p style="padding:1%;">
+        <code class="code_block">pd.to_datetime(timestamp, unit='s').dt.tz_localize('UTC').dt.tz_convert('US/Mountain')</code>
+    </p>
+    <p>
+        Since I polled the Vehicle Position feed every minute, there will often be rows that include a vehicle 
+        in transit to a stop. I decided to solve for this issue first by sorting the data by vehicle, then timestamp 
+        which will give me ordinal data as the vehicle moves along their trip. Once I had that, I needed to see if 
+        the current row was a vehicle arriving at a station. In order to determine this, I needed to see if the next 
+        row after had a different stop_id (indicating that the vehicle was either at or very soon arriving at a stop). 
+        I grouped my Pandas DataFrame by <code class="code">trip_id</code> and <code class="code">vehicle_label</code> 
+        and shifted <code class="code">stop_id</code> by -1 to see if the next row 
+        had a different stop_id from the current_row. Finally I removed any rows where the 
+        <code class="code">current_stop_id == next_stop_id</code> since those meant that the vehicle was in transit to the next stop and 
+        not currently there.
+    </p>
+
+    <p>Once I had my data down to just rows where a vehicle was at or immediately arriving at a stop, 
+        I performed the more computationally intensive operations like:
+        <ul style="padding-left:5%;">
+            <li>joining the .txt files from the GTFS data by their primary keys in the main data set</li>
+            <li>selecting just the columns I wanted to use going forward</li>
+            <li>replacing the integer codes in current_status and route_type with their real-world values:<br>
+                <div style="background: #f8f8f8; width:80%;">
+                    <pre style="margin: 0; line-height: 125%">
+                        status_dict <span style="color: #666666">=</span> {<span style="color: #666666">0</span>: <span style="color: #BA2121">&#39;incoming_at&#39;</span>
+                                      ,<span style="color: #666666">1</span>: <span style="color: #BA2121">&#39;stopped_at&#39;</span>
+                                      ,<span style="color: #666666">2</span>: <span style="color: #BA2121">&#39;in_transit_to&#39;</span>}
+
+                        route_dict <span style="color: #666666">=</span> {<span style="color: #666666">0</span>: <span style="color: #BA2121">&#39;light_rail&#39;</span>
+                                     ,<span style="color: #666666">2</span>: <span style="color: #BA2121">&#39;commuter_rail&#39;</span>
+                                     ,<span style="color: #666666">3</span>: <span style="color: #BA2121">&#39;bus&#39;</span>}
+                        </pre>
+                    </div>
+
+            </li>
+            <li>Renaming columns so that I don't get confused with arriving or departing data (departing data is the data shifted by -1)</li>
+            <li>Calculating the time in minutes between the arrival/departure timestamp and the scheduled arrival/departure times</li>
+            <li>Calculating the distance in meters between the arrival/departure lat/lng and the next stop's lat/lng</li>
+        </ul>
+    </p>
+
+    <p>
+        During the process of cleaning the data, I noticed that several days were missing entirely 
+        (from 2021-02-19 19:45 to 2021-02-22 07:55). This appears to have been caused by renaming my 
+        repository from <b>Capstone_1</b> to <b>rtd_on_time_departure</b>. The name change had several downstream impacts, 
+        most significantly on the crontab job I had running where the directory name was no longer found. 
+        While this is unfortunate, it will not severely impact my overall analysis.
+    </p>
+
+    <h2>EDA</h2>
+    <hr>
+    <p>
+        Now that I have my data in a workable state, 
+        I wanted to visualize the entire dataset to see the range of values I would be working with.
+    </p>
+    <h3>Vehicle Lat/Lngs</h3>
+        <p>
+            First, I started with all the vehicle lat/lng positions included in my cleaned dataset. 
+            If all the lat/lng positions are correct, they should fall well within the boundaries of 
+            <a href="https://gis-rtd-denver.opendata.arcgis.com/app/213a8d61194647ecb22bb5eb26accb8b">RTD's service area</a>. 
+            Using folium, I plotted the `vehicle_lat | vehicle_lng` points into a heatmap:
+        </p>
+        <br>
+    <h4>Vehicle Positions (World Zoom)</h4>
+        <img src="images/vehicle_positions_world.png" alt="What about that little guy?">
+        <p>
+            You can see from this image that there is a concentration of lat/lng points at (0,0) or 
+            <a href="https://en.wikipedia.org/wiki/Null_Island" alt="Null Island Wiki">Null Island</a>. 
+            GPS data is not perfect and oftentimes if there is an error logging at position it will report as (0,0). 
+            While the probability that RTD has a vehicle on Null Island is small, but never zero, I decided to 
+            remove these from my dataset.
+        </p>
+        <br>
+    
+    <h4>Vehicle Positions (Colorado Zoom)</h4>
+        <img src="images/vehicle_positions_colorado.png" alt="That little guy?">
+        <p>
+            Next I zoomed in closer to the mass of points in Colorado and noticed that there is also a 
+            concentration of points to the southeast of Pueblo, close to La Junta, CO. These fall well 
+            outside of RTD's service area so I again decided to remove these by filtering out any points 
+            with a longitude >=  -104.8, well south of RTD's southern limit.
+        </p>
+        <br>
+    
+    <h4>Vehicle Positions (Denver Zoom)</h4>
+        <img src="images/vehicle_positions_denver.png" alt="I wouldn't worry about that little guy">
+        <p>
+            Lastly, I zoomed in on Denver to see if there were any other outliers that didn't fit within my dataset. 
+            There was a cluster of points that looked to be a vehicle traveling along Boulder Canyon Dr (Hwy 119) 
+            between Boulder and Nederland. I initially assumed this was a vehicle that got lost but forgot to turn 
+            off their GPS transponder. Upon further inspection though, this appears to be RTD's
+            <a href="https://www.rtd-denver.com/app/route/NB/schedule" alt="">NB route</a> which services Eldora 
+            Mountain Resort on Monday - Friday so there's no need to remove it from my dataset.
+        </p>
+        <br>
+        <p>
+            Next, I wanted to see what sort of range in departure_times I would be dealing with. 
+            In this case, a negative value means the vehicle left before the scheduled departure time 
+            and a positive value means it left after the scheduled departure time. I used a histogram to 
+            plot the distributions for all the stops:
+    
+            <img src="images/departure_time_histogram.png" alt="Departure Time Histogram"><br>
+            It looks like 99.5% of my data falls within (-20, 20) minutes so I zoomed in there to get a 
+            better idea of the distribution. There is definitely a normal distribution here with a slight 
+            left skew as vehicles are more often slightly late than slightly early. 
+            Overall though, this gives me a good idea of where my departure times will fall for the dataset.
+        </p>
+
+    <h4>Null Hypothesis</h4>
+    <p>
+        If we use the 2019Q3 goals (86% System, 90% Light Rail, 86% Bus) for our Null Hypothesis, 
+        we can see that COVID-19 and the RTD operator shortage of 2020 had significant impacts to the on-time 
+        departure rate. Since I am running 3 experiments:
+
+        $$\large H_{0_{system}}: \text{On Time Service >= 86%}\ \| \ \large H_{A_{system}}: \text{On Time Service < 86%}$$ 
+        $$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 90%}\ \| \ \large H_{A_{\text{light rail}}}: \text{On Time Service < 90%}$$ 
+        $$\large H_{0_{\text{bus}}}: \text{On Time Service >= 86%}\ \ \| \ \large H_{A_{\text{bus}}}: \text{On Time Service < 86%}$$ 
+
+        I will need to correct for using my original stated \( \alpha = 0.01\) by using the 
+        <b>Bonferroni correction</b>. I would instead use \( \frac{0.01}{3}\) or \( \alpha=0.003\). 
+        The p-value for each of our route types is below our \( \alpha\), which means we can 
+        <b>reject the Null Hypothesis that RTD's on-time departure rate during the measured time period was 86% or greater</b>.
+    
+        <img src="images/original_null_hypothesis.png" alt="Null Hypothesis">
+    </p>
+
+    <h4>Alternate Hypothesis</h4>
+    <p>
+        For each of our experiments, you can also see that the alternate hypothesis distribution is well below 
+        the critical value (\(\alpha=0.003\)) which results in a very little chance of Type I or Type II Errors. 
+        These graphs show us that there is indeed a difference between the stated on-time service goal of 86% 
+        (90% for Light Rail) and the observed on-time service from February 16th, 2020 - February 22nd, 2020. 
+        This of course makes sense because of what happened in 2020 with COVID-19 and the operator shortage.
+
+        <img src="images/original_alt_hypothesis.png" alt="Alternate Hypothesis">
+    </p>
+
+
+
+    <div class="maps">{% include html/All_cluster_map.html %}</div>
     
     
     <main id="content" class="main-content" role="main">
