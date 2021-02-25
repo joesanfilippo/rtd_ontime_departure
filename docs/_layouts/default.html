@@ -11,8 +11,8 @@
         gtag('config', '{{ site.google_analytics }}');
       </script>
     {% endif %}
-    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+    <meta charset="UTF-8">
+
 {% seo %}
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="preload" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" as="style" type="text/css" crossorigin>
@@ -37,9 +37,8 @@
     </header>
 
     <main id="content" class="main-content" role="main">
-      
       {{ content }}
-
+      <div class="maps">{% include html/All_cluster_map.html %}</div>
       <footer class="site-footer">
         {% if site.github.is_project_page %}
           <span class="site-footer-owner"><a href="{{ site.github.repository_url }}">{{ site.github.repository_name }}</a> is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.</span>

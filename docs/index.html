@@ -1,23 +1,97 @@
+--- 
 ---
-title: Home
----
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "en-US" }}">
   <head>
-    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.title }}</title>
-    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+    <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&display=swap" as="style" type="text/css" crossorigin>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#157878">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
     <style>
+        img {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                width: 90%;
+                padding-left: 10%;
+            }
         .maps {
             width: 100%;
             height: 50%;
-            padding-left: 5%;
-            padding-right: 5%;
+            padding-left: 1%;
+            padding-right: 1%;
+        }
+        .body {
+            padding-left:5%;
+            padding-right:5%;
+            font-size:15px
         }
     </style>
   </head>
-  <body>
-    {{ content }}
-    <div class="maps">{% include html/All_cluster_map.html %}</div>
+  <body class="body">
+    <a id="skip-to-content" href="#content">Skip to the content.</a>
+
+    <header class="page-header" role="banner">
+      <!-- <h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1> -->
+      <h5 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h2>
+      {% if site.github.is_project_page %}
+        <a href="{{ site.github.repository_url }}" class="btn">View on GitHub</a>
+      {% endif %}
+      {% if site.show_downloads %}
+        <a href="{{ site.github.zip_url }}" class="btn">Download .zip</a>
+        <a href="{{ site.github.tar_url }}" class="btn">Download .tar.gz</a>
+      {% endif %}
+    </header>
+    <h1>RTD On-Time Departure</h1>
+    <hr>
+    <h2>Background</h2>
+    <hr>
+    <p>The mission of Denver's Regional Transportation District (RTD) is to <b>provide convenient bus and rail 
+        service to the Denver Metro Area</b>. RTD operates more than 170 bus routes, 12 rail lines, and 
+        specialty services like Park-N-Ride for commuters, Access-A-Ride for disabled rides, and the 
+        free 16th Street Mall Ride. According to the 2019 Board of Directors Report, RTD's 
+        <a href="https://www.rtd-denver.com/sites/default/files/files/2020-01/Q3-2019-KPIs.pdf">2019Q3 KPI for local on-time performance was 86%</a></p>
+        
+    <img src="images/rtd_2019Q3_kpis.png" alt="RTD's 2019Q3 KPIs" style="width:80%; height:35%">
+    
+    <p>As someone who recently transitioned from a personally owned vehicle to more sustainable forms 
+        of transportation, I would like to investigate whether or not they are still meeting this goal 
+        and what lines/routes have a higher or lower on-time performance than the entire system as 
+        whole. My hypotheses will be:
+
+        $$\large H_0 \text{: RTD's Local On-Time Service >= 86%} $$
+
+        $$\large H_A \text{: RTD's Local On-TIme Service < 86%} $$
+    </p>
+
+    <h2>Dataset</h2>
+    <hr>
+    <h3>GTFS-RT</h3>
+
+    <p>
+        My dataset is pulled from <a href="https://www.rtd-denver.com/business-center/open-spacial-data/gtfs-rt" >
+            RTD's Public GTFS-RT (General Transit Feed Specification - Realtime Transit) feeds
+        </a>. There are 3 feeds in RTD's GTFS-RT data:
+    </p>
+    <ol style="padding-left:5%;">
+        <li><b>Alerts</b>: This feed includes alerts about unforeseen events like route disruptions and stop closures</li>
+        <li><b>Trips</b>: This feed includes trip progress and arrival/departure predictions including delays, cancellations, or changed routes.</li>
+        <li><b>Vehicle Position</b>: This feed includes vehicle locations, the upcoming stop, and can include optional data like congestion level (occupancy) of the vehicle.</li>
+    </ol>
+
+        <div class="maps">{% include html/All_cluster_map.html %}</div>
+    
+    
+    <main id="content" class="main-content" role="main">
+      <footer class="site-footer">
+        {% if site.github.is_project_page %}
+          <span class="site-footer-owner"><a href="{{ site.github.repository_url }}">{{ site.github.repository_name }}</a> is maintained by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>.</span>
+        {% endif %}
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a>.</span>
+      </footer>
+    </main>
   </body>
 </html>
