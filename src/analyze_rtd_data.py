@@ -37,7 +37,15 @@ class RTD_analyze(object):
 
     def calculate_ontime_departure(self):
         '''
-        Calculate the # of times in the RTD_analyze.data that a vehicle was on_time vs not.
+        Calculate the # of times in the RTD_analyze.data that a vehicle was on_time vs not according to RTD's
+            definition of on-time departure: 
+                - Bus & Light Rail are considered on-time if a departure from a location is no more than 1 minute
+                    early or 5 minutes after the scheduled departure time
+                - Commuter Rial is considered on-time if a departure from a location is no more than 0 minutes 
+                    early or 5 minutes after the scheduled departure time.
+
+        Args:
+            None
         '''
         self.ontime_departure = []
     
@@ -59,7 +67,19 @@ class RTD_analyze(object):
         self.ontime_stops = sum(self.data.departure_status == 'on_time')
         self.ontime_departure_rate = self.ontime_stops / self.total_stops
 
-    def calculate_p_null(self, alpha):
+    def calculate_p_null(self, alpha=0.05):
+        '''
+        Calculate the # of times in the RTD_analyze.data that a vehicle was on_time vs not according to RTD's
+            definition of on-time departure: 
+                - Bus & Light Rail are considered on-time if a departure from a location is no more than 1 minute
+                    early or 5 minutes after the scheduled departure time
+                - Commuter Rial is considered on-time if a departure from a location is no more than 0 minutes 
+                    early or 5 minutes after the scheduled departure time.
+
+        Args:
+            alpha (float) = The alpha value you want to calculate your Null Hypothesis using. Must be a number
+                between 0.0 and 1.0. Default value is 0.05.
+        '''
         n = self.total_stops
         p_alt = self.ontime_departure_rate
         p_null = np.linspace(p_alt, p_alt + 0.1, 100000)
@@ -80,6 +100,15 @@ class RTD_analyze(object):
         return self.p_null
 
     def plot_null_hypothesis(self, ax, alpha_value, null_percent):
+        '''
+        Plots the Null Hypothesis distribution along with the alpha_value as a dashed vertical line and 
+            shades in the p-value to see if it falls above or below the alpha.
+        Args:
+            ax (matplotlib axes): The Matplotlib axes to use for the graph.
+            alpha_value (float) = The alpha value you want to calculate your Null Hypothesis using. Must be a number
+                between 0.0 and 1.0. Default value is 0.05.
+            null_percent: The Null Hypothesis probability to use for the experiment.
+        '''
         def thousands(x, pos):
             'The two args are the value and tick position'
             return '%3.0f' % (x/1000)
@@ -111,6 +140,18 @@ class RTD_analyze(object):
             ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
 
     def plot_alt_hypothesis(self, ax, alpha_value, null_percent, legend_loc):
+        '''
+        Plots the Null and Alternate Hypothesis distributions along with the alpha_value as a dashed vertical line 
+            and shades in the Type I error probability in red, the Type II error probability in Blue and the 
+            Power of the experiment in Green.
+        Args:
+            ax (matplotlib axes): The Matplotlib axes to use for the graph.
+            alpha_value (float) = The alpha value you want to calculate your Null Hypothesis using. Must be a number
+                between 0.0 and 1.0. Default value is 0.05.
+            null_percent: The Null Hypothesis probability to use for the experiment.
+            legend_loc (matplotlib Legend parameter): Used to move the legend location around to de-conflict with the
+                distributions.
+        '''
         def thousands(x, pos):
             'The two args are the value and tick position'
             return '%3.0f' % (x/1000)
@@ -149,6 +190,14 @@ class RTD_analyze(object):
             ax.set_title(f"{self.route_type.replace('_', ' ').title()} Routes", fontsize=graph_fontsize)
 
     def cluster_map(self):
+        '''
+        Creates and saves a map that shows a cluster of stop lat/lng points that have over 50 data points and
+        assigns them an icon based on their mode of transportation. The icon is also shaded to represent the 
+        on-time departure distribution with red being low and green being high.
+
+        Args:
+            None
+        '''
         # Cluster of Stops with On-Time Departure %
         on_time = self.data.groupby(['stop_id', 'stop_name', 'stop_lat', 'stop_lng', 'route_type']).departure_status.apply(lambda x: (x == 'on_time').sum()).reset_index(name='on_time_stops')
         total = self.data.groupby(['stop_id', 'stop_name', 'stop_lat', 'stop_lng', 'route_type']).size().reset_index(name='total_stops')
@@ -193,7 +242,14 @@ class RTD_analyze(object):
             stop_map.save(f"html/{self.route_label}_cluster_map.html")
 
     def neighborhood_map(self):
+        '''
+        Creates and saves a map that shows a map of Denver neighborhoods with shading to indicate the average
+        on-time departure percentage for all the stops in that neighborhood.
         
+        Args:
+            None
+        '''
+
         neighborhood_shapes = gpd.read_file('data/statistical_neighborhoods/statistical_neighborhoods.shp').set_index('NBHD_ID')
         geo_rtd = gpd.GeoSeries(self.data.apply(lambda z: Point(z['stop_lng'], z['stop_lat']), 1),crs={'init': 'epsg:4326'})
         geo_stops = gpd.GeoDataFrame(self.data.drop(['stop_lat', 'stop_lng'], 1), geometry=geo_rtd)

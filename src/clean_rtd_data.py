@@ -130,6 +130,19 @@ class RTD_df(object):
         self.df[new_column] = [round(geo.distance(point_1, point_2).m,2) if (~pd.isnull(point_2[0])) & (point_1[0] > 0) else np.nan for point_1, point_2 in zip(point_1, point_2)]
 
     def clean_my_data(self):
+        '''
+        Runs the cleaning methods on an RTD_df class so that self.df returns a dataset ready for analysis. Cleaning
+        functions include:
+            1. convert_timezone_local()
+            2. shift_departures()
+            3. join_txt_file()
+            4. parse_codes()
+            5. calculate_time()
+            5. calculate_distance()
+
+        Args: None
+        '''
+
         # Remove any NaNs from the timestamp field
         self.df = self.df[(~self.df.timestamp.isnull())]
 
