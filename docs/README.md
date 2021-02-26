@@ -1,15 +1,21 @@
+---
+layout: default
+description: How has RTD's on-time departure rate changed from 2019Q3 to early 2021? I explore the changes through statistical analysis and plotting.
+---
+
 # RTD On Time Departure
 
 ## Background
 ---
-The mission of Denver's Regional Transportation District (RTD) is to **provide convenient bus and rail service to the Denver Metro Area**. RTD operates more than 170 bus routes, 12 rail lines, and specialty services like Park-N-Ride for commuters, Access-A-Ride for disabled rides, and the free 16th Street Mall Ride. According to the 2019 Board of Directors Report, RTD's [2019Q3 KPI for local on-time performance was 86%](https://www.rtd-denver.com/sites/default/files/files/2020-01/Q3-2019-KPIs.pdf)
+The mission of Denver's Regional Transportation District (RTD) is to **provide convenient bus and rail service to the Denver Metro Area**. RTD operates more than 170 bus routes, 12 rail lines, and specialty services like Park-N-Ride for commuters, Access-A-Ride for disabled rides, and the free 16th Street Mall Ride. According to the 2019 Board of Directors Report, RTD's [2019Q3 KPI for local on-time performance was 86%](https://www.rtd-denver.com/sites/default/files/files/2020-01/Q3-2019-KPIs.pdf).
 
 ![RTD 2019Q3 KPIs](images/rtd_2019Q3_kpis.png)
 
 As someone who recently transitioned from a personally owned vehicle to more sustainable forms of transportation, I would like to investigate whether or not they are still meeting this goal and what lines/routes have a higher or lower on-time performance than the entire system as whole. My hypotheses will be:
 
-$$\large H_0 \text{: RTD's Local On-Time Service >= 86\%} $$
-$$\large H_A \text{: RTD's Local On-TIme Service < 86\%} $$
+$$\large H_0 \text{: RTD's Local On-Time Service >= 86%} $$
+
+$$\large H_A \text{: RTD's Local On-TIme Service < 86%} $$
 
 ## Dataset
 ---
@@ -47,15 +53,15 @@ In addition to realtime data feeds, RTD also has GTFS files that include additio
 
 1. **Trips**: Includes additional information about a specific trip, stored in a text file with comma delimiters for the following columns:
 
-| Variable name     | Data type     | Description                                                                                                                                                          |
-|-------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| block_id          | String        |                                                                                                                                                                      |
-| route_id          | String        | Corresponds to the Route ID in the main dataset                                                                                                                      |
-| direction_id      | Integer       | Corresponds to the Direction ID in the main dataset                                                                                                                  |
-| trip_headsign     | String        | User friendly indicator of which direction the vehicle is travelling, usually displayed at the front of the vehicle. Either the start point or end point of a route. |
-| shape_id          | Integer       |                                                                                                                                                                      |
-| service_id        | String        |                                                                                                                                                                      |
-| trip_id           | Integer       | **Primary key to join to the main dataset**                                                                                                                          |
+| Variable name     | Data type     | Description                                                                                                                                                             |
+|-------------------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block_id          | String        | Identifies the block to which the trip belongs. A block consists of a single trip or many sequential trips made using the same vehicle, defined by shared service days. |
+| route_id          | String        | Corresponds to the Route ID in the main dataset                                                                                                                         |
+| direction_id      | Integer       | Corresponds to the Direction ID in the main dataset                                                                                                                     |
+| trip_headsign     | String        | User friendly indicator of which direction the vehicle is travelling, usually displayed at the front of the vehicle. Either the start point or end point of a route.    |
+| shape_id          | Integer       | Identifies a geospatial shape that describes the vehicle travel path for a trip.                                                                                        |
+| service_id        | String        | Identifies a set of dates when service is available for one or more routes                                                                                              |
+| trip_id           | Integer       | **Primary key to join to the main dataset**                                                                                                                             |
 
 2. **Routes**: Includes additional information about a specific route, stored in a text file with comma delimiters for the following columns:
 
@@ -78,12 +84,12 @@ In addition to realtime data feeds, RTD also has GTFS files that include additio
 | stop_id              | Integer    | **Primary key to join to the main dataset**                                                                                                              |
 | stop_name            | String     | User friendly name for the stop, usually consisting of cross-streets adjacent to that stop.                                                              |
 | stop_desc            | String     | Indicates which direction vehicles are travelling when approaching the stop.                                                                             |
-| stop_code            | Integer    |                                                                                                                                                          |
-| zone_id              | Integer    |                                                                                                                                                          |
+| stop_code            | Integer    | Short text or a number that identifies the location for riders. These codes are often used in phone-based transit information systems.                   |
+| zone_id              | Integer    | Identifies the fare zone for a stop. This field is required if providing fare information using fare_rules.txt, otherwise it is optional.                |
 | location_type        | Integer    | Either a 0 or 1. 0=Stop or Platform where passengers board or disembark from a transit vehicle. 1=Station which can contain one or more stops/platforms. |
 | stop_lat             | Float      | The stop's Degrees North in the WGS-84 coordinate.                                                                                                       |
 | stop_lon             | Float      | The stop's Degrees East in the WGS-84 coordinate.                                                                                                        |
-| stop_timezone        | String     |                                                                                                                                                          |
+| stop_timezone        | String     | Timezone of the location. If the location has a parent station, it inherits the parent station’s timezone instead of applying its own.                   |
 | stop_url             | String     | URL to lookup the route on RTD's website.                                                                                                                |
 | parent_station       | Integer    | stop_id of the parent location if location_type = 0 and a parent station exists.                                                                         |
 | wheelchair_boarding  | Integer    | Either a 0 or 1. 0=No accessibility information for the stop. 1=Some vehicles at this stop can be boarded by a rider in a wheelchair.                    |
@@ -117,8 +123,8 @@ pd.to_datetime(timestamp, unit='s').dt.tz_localize('UTC').dt.tz_convert('US/Moun
 Since I polled the Vehicle Position feed every minute, there will often be rows that include a vehicle in transit to a stop. I decided to solve for this issue first by sorting the data by vehicle, then timestamp which will give me ordinal data as the vehicle moves along their trip. Once I had that, I needed to see if the current row was a vehicle arriving at a station. In order to determine this, I needed to see if the next row after had a different stop_id (indicating that the vehicle was either at or very soon arriving at a stop). I grouped my Pandas DataFrame by `trip_id` and `vehicle_label` and shifted `stop_id` by -1 to see if the next row had a different stop_id from the current_row. Finally I removed any rows where the `current_stop_id` == `next_stop_id` since those meant that the vehicle was in transit to the next stop and not currently there.
 
 Once I had my data down to just rows where a vehicle was at or immediately arriving at a stop, I performed the more computationally intensive operations like: 
-* joining the .txt files from the GTFS data by their primary keys in the main data set 
-* selecting just the columns I wanted to use going forward
+* Joining the .txt files from the GTFS data by their primary keys in the main data set 
+* Selecting just the columns I wanted to use going forward
 * Replacing the integer codes in current_status and route_type with their real-world values:
 
     ```python
@@ -164,15 +170,19 @@ It looks like 99.5% of my data falls within (-20, 20) minutes so I zoomed in the
 
 ### Null Hypotheses
 If we use the 2019Q3 goals (86% System, 90% Light Rail, 86% Bus) for our Null Hypothesis, we can see that COVID-19 and the RTD operator shortage of 2020 had significant impacts to the on-time departure rate. Since I am running 3 experiments:
-$$\large H_{0_{system}}: \text{On Time Service >= 86\%}\ \| \ \large H_{A_{system}}: \text{On Time Service < 86\%}$$ 
-$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 90\%}\ \| \ \large H_{A_{\text{light rail}}}: \text{On Time Service < 90\%}$$ 
-$$\large H_{0_{\text{bus}}}: \text{On Time Service >= 86\%}\ \ \| \ \large H_{A_{\text{bus}}}: \text{On Time Service < 86\%}$$ 
-I will need to correct for using my original stated $\large \alpha = 0.01$ by using the **Bonferroni correction**. I would instead use $\large \frac{0.01}{3}$ or $\large \alpha=0.003$. The p-value for each of our route types is below our $\large \alpha$, which means we can **reject the Null Hypothesis that RTD's on-time departure rate during the measured time period was 86% or greater**.
+
+$$H_{0_{system}}: \text{On Time Service >= 86%}\ \| \ H_{A_{system}}: \text{On Time Service < 86%}$$ 
+
+$$H_{0_{\text{light rail}}}: \text{On Time Service >= 90%}\ \| \ H_{A_{\text{light rail}}}: \text{On Time Service < 90%}$$ 
+
+$$H_{0_{\text{bus}}}: \text{On Time Service >= 86%}\ \ \| \ H_{A_{\text{bus}}}: \text{On Time Service < 86%}$$ 
+
+I will need to correct for using my original stated $\alpha = 0.01$ by using the **Bonferroni correction**. I would instead use $\frac{0.01}{3}$ or $\alpha=0.003$. The p-value for each of our route types is below our $\alpha$, which means we can **reject the Null Hypothesis that RTD's on-time departure rate during the measured time period was 86% or greater**.
 
 ![Null Hypothesis](images/original_null_hypothesis.png)
 
 ### Alternate Hypothesis
-For each of our experiments, you can also see that the alternate hypothesis distribution is well below the critical value ($\large \alpha \large$=0.003) which results in a very little chance of Type I or Type II Errors. These graphs show us that there is indeed a difference between the stated on-time service goal of 86% (90% for Light Rail) and the observed on-time service from February 16th, 2020 - February 22nd, 2020. This of course makes sense because of what happened in 2020 with COVID-19 and the operator shortage.
+For each of our experiments, you can also see that the alternate hypothesis distribution is well below the critical value ($\alpha \large$=0.003) which results in a very little chance of Type I or Type II Errors. These graphs show us that there is indeed a difference between the stated on-time service goal of 86% (90% for Light Rail) and the observed on-time service from February 16th, 2020 - February 22nd, 2020. This of course makes sense because of what happened in 2020 with COVID-19 and the operator shortage.
 
 ![Alternate Hypothesis](images/original_alt_hypothesis.png)
 
@@ -180,17 +190,23 @@ For each of our experiments, you can also see that the alternate hypothesis dist
 ### Modified Null Hypotheses
 Since there is such a drastic difference between the 2019Q3 goal and current state, it might be better to estimate what would be a good goal for RTD to set for their routes? We can use the same statistical analysis to see what on-time service % would still be above the current state but within reach for significant improvement. For this experiment, I wanted to solve for a Null probability given my conditions:
 
-$$\large n=\text{Observed number of stops}$$
-$$\large \mu_A=\text{Observed on-time departure rate}$$
-$$\large \alpha=0.003$$
-$$\large \beta=0.20$$
-$$\large Power=0.80$$
+$$n=\text{Observed number of stops}$$
+
+$$\mu_A=\text{Observed on-time departure rate}$$
+
+$$\alpha=0.003$$
+
+$$\beta=0.20$$
+
+$$Power=0.80$$
 
 Given the above parameters I am able to solve for the difference between the observed on-time departure rate and the null hypothesis on-time departure rate. When I did this, I came up with the following 3 values for System wide, Light Rail, and Bus routes:
 
-$$\large H_{0_{system}}: \text{On Time Service >= 81.29\%}$$ 
-$$\large H_{0_{\text{light rail}}}: \text{On Time Service >= 86.60\%}$$ 
-$$\large H_{0_{\text{bus}}}: \text{On Time Service >= 81.05\%}$$ 
+$$H_{0_{system}}: \text{On Time Service >= 81.29\%}$$ 
+
+$$H_{0_{\text{light rail}}}: \text{On Time Service >= 86.60\%}$$ 
+
+$$H_{0_{\text{bus}}}: \text{On Time Service >= 81.05\%}$$ 
 
 These can be used by RTD to set attainable goals that will have a significant impact on the current state of on-time departures across the system. The difference between $H_0$ and $H_A$ is only a fraction of a percent in most cases, showing how small of a change you need for a significant difference when you have such a large number of observations.
 
@@ -210,7 +226,7 @@ I also wanted to dive one level deeper to see what the top 10 routes by # of sto
 ![Top 10 Routes Alternate Hypothesis](images/top_10_routes_alt_hypothesis.png)
 
 ### Map of Neighborhoods by On-Time Departure Percent
-Finally, equity plays a large role in making sure that RTD is providing convenient and reliable service across the entire Metro Denver Area. So in order to determine this, I plotted the on-time departure rate across all Denver neighborhoods according to where the stop is located. You can dive into the map at [All Routes Neighborhood Map](html/All_neighborhood_map.html)
+Finally, equity plays a large role in making sure that RTD is providing convenient and reliable service across the entire Metro Denver Area. So in order to determine this, I plotted the on-time departure rate across all Denver neighborhoods according to where the stop is located.
 
 ![All Routes Neighborhood Map](images/all_routes_neighborhood.png)
 
@@ -224,24 +240,20 @@ You can see that several neighborhoods have a lower on-time departure percentage
 | East Colfax       | 72.7%               |
 | Elyria Swansea    | 74.6%               |
 
-These are also traditionally low-income, under-served neighborhoods as well where residents might be reliant on public transportation for their jobs. If less than 3 out of 4 busses show up on time, they may be forced to rely on other sources of transportation or could get fired from a job for circumstances outside their control.
+Reliable, convenient transportation is even more important for these neighborhoods since they are also traditionally low-income and under-served. Residents in these areas might be reliant on public transportation for their jobs. If less than 3 out of 4 busses show up on time, they may be forced to rely on other sources of transportation or could get fired from a job for circumstances outside their control.
 
 ## Conclusions
 ---
 It isn't hard to see that 2020 impacted RTD's on-time departure metric in a severely negative way. Having a reliable, convenient public transportation system is crucial to convincing people that life without a personally owned vehicle is possible, especially in Denver. Politicians will need to do more than make grandiose proclamations like "I will make the trains run on time" and instead put serious resources into making public transportation reliable, convenient, and equitable for all. In order to convince them though, datasets and analysis like this are just the tip of the iceberg for what will be needed.
 
 ### Lessons Learned
-**Make your cron jobs foolproof**
+* **Make your cron jobs foolproof**: I ran into an issue during the middle of my data collection where my cron job failed to run. When setting up your cron job, make sure that you are using directories and files that you know you can keep from changing during the data collection process.
 
-I ran into an issue during the middle of my data collection where my cron job failed to run. When setting up your cron job, make sure that you are using directories and files that you know you can keep from changing during the data collection process.
+* **If you know your dataset is going to be large, store it in an AWS S3 bucket from the beginning**: Halfway through my project, my dataset grew too large to store on Github. If you know you are going to be working with datasets over 100MB, store them in an AWS S3 bucket from the very beginning. This will save you from problems pushing to Github in the future when your file becomes too big.
 
-**If you know your dataset is going to be large, store it in an AWS S3 bucket from the beginning**
+* **It is incredibly annoying to get your plots right when you have a large dataset**: When working on plots, where possible, use a smaller subset of your data to make sure the legends, axis labels, titles, etc. all look good then run it once on your larger dataset. This will prevent you from having to wait 5-10 minutes for a plot to load when the only change you made was `ax.legend(fontsize=15)` to `ax.legend(fontsize=16)`
 
-Halfway through my project, my dataset grew too large to store on Github. If you know you are going to be working with datasets over 100MB, store them in an AWS S3 bucket from the very beginning. This will save you from problems pushing to Github in the future when your file becomes too big.
-
-**It is incredibly annoying to get your plots right when you have a large dataset**
-
-When working on plots, where possible, use a smaller subset of your data to make sure the legends, axis labels, titles, etc. all look good then run it once on your larger dataset. This will prevent you from having to wait 5-10 minutes for a plot to load when the only change you made was `ax.legend(fontsize=15)` to `ax.legend(fontsize=16)`
+* **HTML is hard. Learning how to use Github.io pages properly is worth it.**: Github pages is powered by Jekyll, Ruby software designed for static sites and optimized for a blog format. You can edit the content directly in Github but it often takes much longer iterate than setting up a Jekyll server on your local machine. The main aspects to focus on are your homepage (index.html or index.md) and the Layout you choose.
 
 ## Future Work
 ---
