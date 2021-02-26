@@ -86,7 +86,7 @@
     <hr>
     <p>The mission of Denver's Regional Transportation District (RTD) is to <b>provide convenient bus and rail 
         service to the Denver Metro Area</b>. RTD operates more than 170 bus routes, 12 rail lines, and 
-        specialty services like Park-N-Ride for commuters, Access-A-Ride for disabled rides, and the 
+        specialty services like Park-N-Ride for commuters, Access-A-Ride for disabled riders, and the 
         free 16th Street Mall Ride. According to the 2019 Board of Directors Report, RTD's 
         <a href="https://www.rtd-denver.com/sites/default/files/files/2020-01/Q3-2019-KPIs.pdf">2019Q3 KPI for local on-time performance was 86%</a>.</p>
         
@@ -100,7 +100,7 @@
 
         $$\large H_0 \text{: RTD's Local On-Time Service >= 86%} $$
 
-        $$\large H_A \text{: RTD's Local On-TIme Service < 86%} $$
+        $$\large H_A \text{: RTD's Local On-Time Service < 86%} $$
     </p>
 
     <h2>Dataset</h2>
@@ -226,7 +226,7 @@
                     <tr>
                         <td class="td">block_id</td>
                         <td class="td">String</td>
-                        <td class="td"></td>
+                        <td class="td">Identifies the block to which the trip belongs. A block consists of a single trip or many sequential trips made using the same vehicle, defined by shared service days.</td>
                     </tr>
                     <tr>
                         <td class="td">route_id</td>
@@ -246,17 +246,17 @@
                     <tr>
                         <td class="td">shape_id</td>
                         <td class="td">Integer</td>
-                        <td class="td"></td>
+                        <td class="td">Identifies a geospatial shape that describes the vehicle travel path for a trip.</td>
                     </tr>
                     <tr>
                         <td class="td">service_id</td>
                         <td class="td">String</td>
-                        <td class="td"></td>
+                        <td class="td">Identifies a set of dates when service is available for one or more routes</td>
                     </tr>
                     <tr>
                         <td class="td">trip_id</td>
                         <td class="td">Integer</td>
-                        <td class="td"></td>
+                        <td class="td"><b>Primary key to join to the main dataset</b></td>
                     </tr>
                 </table>
             </li>
@@ -339,12 +339,12 @@
                     <tr>
                         <td class="td">stop_code</td>
                         <td class="td">Integer</td>
-                        <td class="td"></td>
+                        <td class="td">Short text or a number that identifies the location for riders. These codes are often used in phone-based transit information systems.</td>
                     </tr>
                     <tr>
                         <td class="td">zone_id</td>
                         <td class="td">Integer</td>
-                        <td class="td"></td>
+                        <td class="td">Identifies the fare zone for a stop. This field is required if providing fare information using fare_rules.txt, otherwise it is optional.</td>
                     </tr>
                     <tr>
                         <td class="td">location_type</td>
@@ -364,7 +364,7 @@
                     <tr>
                         <td class="td">stop_timezone</td>
                         <td class="td">String</td>
-                        <td class="td"></td>
+                        <td class="td">Timezone of the location. If the location has a parent station, it inherits the parent station’s timezone instead of applying its own.</td>
                     </tr>
                     <tr>
                         <td class="td">stop_url</td>
@@ -452,7 +452,7 @@
     <p>
         My first step in cleaning the data was to make sure none of my timestamp values were <code class="code">NULL</code>. 
         By looking at the shape values before and after, I can see that the only null value was when I initialized 
-        the CSV with the column headers and a null value for each column.
+        the CSV with the column headers and entered a null value for each column.
     </p>
     <p>
         Next, I needed to convert the timestamp field into a Pandas datatime with the local timezone 
@@ -468,7 +468,7 @@
         Since I polled the Vehicle Position feed every minute, there will often be rows that include a vehicle 
         in transit to a stop. I decided to solve for this issue first by sorting the data by vehicle, then timestamp 
         which will give me ordinal data as the vehicle moves along their trip. Once I had that, I needed to see if 
-        the current row was a vehicle arriving at a station. In order to determine this, I needed to see if the next 
+        the current row was a vehicle arriving at a station. In order to determine this, I wanted to see if the next 
         row after had a different stop_id (indicating that the vehicle was either at or very soon arriving at a stop). 
         I grouped my Pandas DataFrame by <code class="code">trip_id</code> and <code class="code">vehicle_label</code> 
         and shifted <code class="code">stop_id</code> by -1 to see if the next row 
@@ -491,8 +491,8 @@
                                   ,<span style="color: #666666">2</span>: <span style="color: #BA2121">&#39;in_transit_to&#39;</span>}
 
                     route_dict <span style="color: #666666">=</span> {<span style="color: #666666">0</span>: <span style="color: #BA2121">&#39;light_rail&#39;</span>
-                                  ,<span style="color: #666666">2</span>: <span style="color: #BA2121">&#39;commuter_rail&#39;</span>
-                                  ,<span style="color: #666666">3</span>: <span style="color: #BA2121">&#39;bus&#39;</span>}
+                                 ,<span style="color: #666666">2</span>: <span style="color: #BA2121">&#39;commuter_rail&#39;</span>
+                                 ,<span style="color: #666666">3</span>: <span style="color: #BA2121">&#39;bus&#39;</span>}
                     </pre>
                 </div>
         <ul style="padding-left:5%; padding-top:1%">
@@ -504,7 +504,7 @@
 
     <p>
         During the process of cleaning the data, I noticed that several days were missing entirely 
-        (from 2021-02-19 19:45 to 2021-02-22 07:55). This appears to have been caused by renaming my 
+        (from 2021-02-19 at 19:45 MST to 2021-02-22 07:55 MST). This appears to have been caused by renaming my 
         repository from <b>Capstone_1</b> to <b>rtd_on_time_departure</b>. The name change had several downstream impacts, 
         most significantly on the crontab job I had running where the directory name was no longer found. 
         While this is unfortunate, it will not severely impact my overall analysis.
@@ -519,9 +519,9 @@
     <h3>Vehicle Lat/Lngs</h3>
         <p>
             First, I started with all the vehicle lat/lng positions included in my cleaned dataset. 
-            If all the lat/lng positions are correct, they should fall well within the boundaries of 
+            If all the lat/lng positions are correct, they should fall within the boundaries of 
             <a href="https://gis-rtd-denver.opendata.arcgis.com/app/213a8d61194647ecb22bb5eb26accb8b">RTD's service area</a>. 
-            Using folium, I plotted the `vehicle_lat | vehicle_lng` points into a heatmap:
+            Using folium, I plotted the <code class="code">vehicle_lat | vehicle_lng</code> points into a heatmap:
         </p>
         <br>
     <h4>Vehicle Positions (World Zoom)</h4>
@@ -718,7 +718,10 @@
         good then run it once on your larger dataset. This will prevent you from having to wait 5-10 minutes for a plot 
         to load when the only change you made was <code class="code">ax.legend(fontsize=15)</code> to 
         <code class="code">ax.legend(fontsize=16)</code></li>
-    <li><b>HTML is hard. Learning how to use Github.io pages properly is worth it.</b></li>
+    <li><b>HTML is hard. Learning how to use Github.io pages properly is worth it.</b>: Github pages is powered by 
+        Jekyll, Ruby software designed for static sites and optimized for a blog format. You can edit the content 
+        directly in Github but it often takes much longer iterate than setting up a Jekyll server on your local 
+        machine. The main aspects to focus on are your homepage (index.html or index.md) and the Layout you choose.</li>
 </ul>
 
 <h2>Future Work</h2>
